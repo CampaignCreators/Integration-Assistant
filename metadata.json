@@ -1,0 +1,6 @@
+{
+  "name": "SaaS to HubSpot Integration Mapper",
+  "description": "An interactive workspace for selecting source SaaS objects, detailing their properties and data types, mapping fields to HubSpot, setting sync frequencies, and generating a visual Entity Relationship Diagram (ERD).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
