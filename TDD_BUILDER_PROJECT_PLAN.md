@@ -113,6 +113,8 @@ Each phase delivers standalone value and has explicit acceptance criteria.
 | 2.2 | Guardrail validation: every ceiling bounded or flagged; every open item owned; export blocked or warned on violations |
 | 2.3 | Band-2 schema pull: target portal object & property definitions via the properties API → seed §12; feed §13's valid-target dropdown |
 | 2.4 | §17 worked-example seeding: pull a real contact/company/deal as a sample-input fixture — **prototype this early; it is tagged To validate and is the highest-leverage section** |
+| 2.5 | **Data Synchronizations Map** (from Integration-Assistant Module 09): per-object sync-scope matrix — object, direction (bidirectional / source→HubSpot / HubSpot→source), frequency (real-time / hourly / daily) — captured in the editor and rendered into §14–16 Matching / Sync / Lifecycle |
+| 2.6 | **Source API feasibility capture** (custom-integration scoping): auth method, webhook availability & verification, rate limits, pagination for the source system — part of the manual source-side input (task 1.7), feeding §5 Non-Functional and §15 Sync design |
 
 **Accept:** changing deal tier inputs correctly re-shapes the visible sections; a ceiling left unbounded is flagged; §12/§13 seed from a live portal.
 
@@ -123,6 +125,7 @@ Each phase delivers standalone value and has explicit acceptance criteria.
 | 3.1 | Client-facing export: Band 1 only, confidence tags hidden, custom products presented as priced deliverables without raw hours |
 | 3.2 | Changelog / re-approval tracking on the TDD model |
 | 3.3 | Optional AI drafting — **only** §1 Executive Summary narrative and §17 expected-output prose — plus AI-suggested product matches & effort estimates |
+| 3.3a | **Discovery Call Notes ingestion** (from Module 09): upload a call transcript; auto-parsed pain points and business constraints seed §8 Assumptions and §9 Risks as suggestions the SE accepts or discards — reuses Integration-Assistant's transcript-analysis endpoint pattern (`server.ts`) |
 | 3.4 | Multi-user: OAuth app replaces the private-app token; hosted storage (Postgres/Supabase); Google Docs export option |
 
 AI sits in Phase 3 deliberately — the HubSpot spine delivers without it, and it assists only the two sections data can't fill well.
@@ -166,7 +169,25 @@ The TDD Builder is a new app, but this codebase has proven patterns worth copyin
 1. **HubSpot API layer** — no HubSpot client, token handling, or `api.hubapi.com` call exists anywhere in this repo.
 2. **`.docx` generation** — exports here are Markdown/JSON only; no `docx`/PDF library is installed.
 
-## 10. Verification strategy
+## 10. Custom integration scoping (adapted from Integration-Assistant Module 09)
+
+Integration-Assistant's Integration Requirements Document generator (`docs/09_integration_requirements_document_generator.md`, built in `src/components/RequirementsDoc.tsx`) is the closest existing relative of the TDD Builder's output layer: it compiles all configuration context into a client-facing SOW. Its custom-integration-scoping chapters map directly onto the TDD and are adopted as follows:
+
+| Module 09 concept | TDD Builder adoption | Where it lands |
+| :--- | :--- | :--- |
+| **Executive Context Summary** (briefing overview, tech-stack alignment, integration strategy) | Template scaffolding + prompts for the SE-authored narrative; Phase 3 AI drafting assists here and only here (with §17) | §1 Executive Summary |
+| **Data Synchronizations Map** (records, synced loops, interval schedules) | A per-object sync-scope matrix — object, direction, frequency — captured in the editor as first-class structured data, not prose (task 2.5) | §14–16 Matching / Sync / Lifecycle |
+| **Granular Map Specifications** (property keys, data-type configurations) | Field-level mapping with explicit data types and type-safety checks; the target side seeds from the properties API (task 2.3), the source side from manual/feasibility input | §12 Data Model, §13 Field Mapping |
+| **Discovery Call Notes** (auto-parsed pain points, business constraints) | Transcript upload → suggested assumptions and risks the SE accepts or discards (task 3.3a) | §8 Assumptions, §9 Risks |
+| **Requirements Sign-off** (standardized scopes preventing scope dilution) | The TDD's own conventions carry this: accepted defaults set scope ceilings, guardrail validation (task 2.2), and changelog / re-approval tracking (task 3.2) | §2a Ceilings, changelog |
+| **Interactive export controls** (print, download, copy) | `.docx` download is primary (Phase 0); client-view Band-1 toggle (task 3.1) plays the role of Module 09's executive-presentation layout | Export layer |
+
+Two scoping aspects Module 09 treats as core are promoted into the TDD Builder's source-side story, since custom integrations are exactly where HubSpot cannot supply the other half:
+
+- **Source API feasibility** — auth method, webhooks, rate limits, pagination — captured with the manual source-system input (tasks 1.7, 2.6) so §5 Non-Functional and §15 Sync design state real constraints rather than placeholders.
+- **Sync directionality & frequency per object** — feeds the tier rubric directly (bidirectional → T3 signal, task 2.1), tying the scoping matrix to the framework-enforcement engine.
+
+## 11. Verification strategy
 
 - **Export fidelity (Phase 0):** automated check diffing the generated `.docx` section structure against the master template; re-run on every export-mapping change.
 - **Golden deal (Phase 1):** maintain one known-good deal in the portal (complete properties, line items spanning standard + custom products, tickets in multiple stages) as the end-to-end fixture; the MVP acceptance test runs against it.
