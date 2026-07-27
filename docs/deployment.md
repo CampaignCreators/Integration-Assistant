@@ -33,6 +33,19 @@ Migrations are ordered and must run in sequence:
 | `0002_decision.sql` | Approach/confidence enums, the stored recommendation |
 | `0003_review_and_admin.sql` | Mapping metadata, app settings, the cost view |
 | `0004_hardening.sql` | Run heartbeat and orphan recovery |
+| `0005_grants.sql` | Table and function privileges for each role |
+
+`0005` is not optional: without it the worker cannot call `claim_next_run` and
+every poll fails with `permission denied`. After migrating, check the privileges
+are as intended:
+
+```bash
+bash scripts/verify-db.sh    # against a local stack
+```
+
+A new table added by a later migration is granted to the worker automatically,
+but **not** to signed-in users — that is deliberate. Add an explicit `grant` for
+`authenticated` alongside its RLS policies, and a case to `scripts/verify-db.sh`.
 
 ### Auth
 

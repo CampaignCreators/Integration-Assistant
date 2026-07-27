@@ -16,6 +16,7 @@
     "local:setup": "bash scripts/dev-setup.sh",
     "local:dev": "node scripts/dev.mjs",
     "local:admin": "bash scripts/make-admin.sh",
+    "local:verify": "bash scripts/verify-db.sh",
     "local:stop": "supabase stop",
     "local:reset": "supabase db reset"
   },

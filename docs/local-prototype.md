@@ -157,6 +157,7 @@ npm run dev:web                         # just the web app
 npm run local:setup                     # re-check setup, rewrite env files
 npm run local:setup -- --reset          # wipe the local database, replay migrations
 npm run local:admin -- you@example.com  # grant admin
+npm run local:verify                    # check database privileges
 npm run local:stop                      # stop the Supabase containers
 npm run local:reset                     # wipe the database and replay migrations
 
@@ -189,6 +190,19 @@ matches what `supabase status` reports.
 **A run sits in "processing" forever.** The worker isn't running or can't reach
 the database. Its terminal output will say which; `curl localhost:8080/ready`
 should return `{"ready":true}`.
+
+**`permission denied for function claim_next_run`,** repeating in the worker log.
+Your database is missing the privilege grants in migration `0005_grants.sql`.
+Pull the latest code and replay the migrations:
+
+```bash
+git pull
+npm run local:reset      # deletes local runs and uploads
+npm run local:verify     # confirms every role has what it needs, and no more
+```
+
+`npm run local:verify` is worth running after any migration change — grants don't
+show up in the unit tests, only against a real database.
 
 **"Missing required environment variable: SUPABASE_URL".** The env files weren't
 generated. Run `npm run local:setup`.
