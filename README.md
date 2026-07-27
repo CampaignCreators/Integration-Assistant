@@ -1,20 +1,56 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# CC Integration App
 
-# Run and deploy your AI Studio app
+Internal Campaign Creators tool that turns raw sales-discovery material (call
+transcripts, notes, requirement docs) into a developer-ready integration scoping
+package: an **Integration Requirements Document** (.docx) and a **Data Mapping
+Table** (.xlsx/.csv) for a HubSpot ↔ target-software integration.
 
-This contains everything you need to run your app locally.
+Full specification: [`docs/build-spec.md`](docs/build-spec.md) ·
+Implementation plan: [`docs/implementation-plan.md`](docs/implementation-plan.md)
 
-View your app in AI Studio: https://ai.studio/apps/adf11930-3f0a-4b45-bd74-eedeb1ee22d1
+## Repository layout
 
-## Run Locally
+| Path | What it is |
+| --- | --- |
+| `apps/web` | Next.js app (Vercel): auth, intake wizard, dashboard, results |
+| `apps/worker` | Express + TypeScript worker: async research/generation pipeline |
+| `packages/shared` | Shared TypeScript types + zod schemas |
+| `supabase` | Postgres migrations, RLS policies, storage buckets |
+| `docs` | Build spec, implementation plan, prototype module docs |
+| `archive/prototype` | Retired AI Studio prototype (reference only) |
 
-**Prerequisites:**  Node.js
+## Stack
 
+Next.js on Vercel · Express/Node.js (TypeScript) worker on a long-running host ·
+Supabase (Postgres, Auth, Storage, RLS, Realtime) · Anthropic Claude API (with
+built-in web search/fetch for research).
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+The research/generation job runs **asynchronously on the worker** — never inside a
+time-limited Vercel function. The web app enqueues a run; the worker claims it from
+Postgres, processes it step by step, and writes status + results back to Supabase.
+
+## Local development
+
+Prerequisites: Node.js ≥ 20, a Supabase project (or `supabase start` locally).
+
+```bash
+npm install
+
+# configure env (never commit real values)
+cp apps/web/.env.example apps/web/.env.local
+cp apps/worker/.env.example apps/worker/.env
+
+# apply database migrations to your Supabase project
+supabase db push          # or: supabase start && supabase db reset (local)
+
+npm run dev:worker        # Express worker on :8080
+npm run dev:web           # Next.js on :3000
+```
+
+## Checks
+
+```bash
+npm run typecheck
+npm run lint
+npm test
+```

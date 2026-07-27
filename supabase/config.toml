@@ -1,0 +1,20 @@
+# Supabase CLI config for local development (`supabase start`).
+project_id = "cc-integration-app"
+
+[api]
+port = 54321
+schemas = ["public", "storage"]
+
+[db]
+port = 54322
+
+[studio]
+port = 54323
+
+[auth]
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/auth/confirm"]
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false
