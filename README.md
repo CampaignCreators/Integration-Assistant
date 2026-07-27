@@ -39,8 +39,10 @@ npm run local:setup      # starts local Supabase, migrates, writes env files
 npm run local:dev        # worker on :8080, web app on :3000
 ```
 
-Sign in with any email address and pick the magic link up from the local mail
-catcher at http://127.0.0.1:54324. Research runs in offline demo mode — the
+Press **Sign in as the local demo user** on the login page — a password sign-in
+as a seeded admin, shown only against a local Supabase. (To sign in as someone
+else, use the email form and collect the magic link from the local mail catcher
+at http://127.0.0.1:54324.) Research runs in offline demo mode — the
 findings are placeholders and label themselves as such — so everything except
 the research itself is exercised for real. Add an `ANTHROPIC_API_KEY` to
 `apps/worker/.env` to switch to real research.

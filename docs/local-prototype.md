@@ -71,22 +71,30 @@ from both is prefixed so you can tell them apart. `Ctrl-C` stops both.
 
 ## Signing in
 
-Local Auth sends no real email. It catches everything in a local inbox instead.
+Press **Sign in as the local demo user** on the login page. No email step; that
+user (`demo@example.com`) is already an admin, so the whole app is reachable.
 
-1. Open http://localhost:3000 and enter any email address — `you@example.com`
-   works, and so does your real one. Nothing leaves your machine.
+That button is not an auth bypass — it is a password sign-in as a user the setup
+script seeded through the Auth API, so the session, RLS and roles all behave
+exactly as they will in production. It appears only when three things are true at
+once: the build is not production, credentials are configured, and the Supabase
+URL is a local one. Any one of those failing hides it. Nothing to remember before
+deploying.
+
+**To sign in as somebody else** — worth doing once, to confirm one user can't see
+another's runs — use the email form instead:
+
+1. Enter any address; nothing leaves your machine.
 2. Open the mail catcher at **http://127.0.0.1:54324**.
-3. Open the message and click the magic link.
+3. Click the link in the message.
 
-You're now signed in as a `rep`, which is what everyone gets by default. To see
-the admin screen and every run:
+That account is an ordinary `rep`. To promote it:
 
 ```bash
-npm run local:admin -- you@example.com
+npm run local:admin -- someone@example.com
 ```
 
-Reload the page and the admin link appears. (The user row only exists after
-you've signed in once, so run this second, not first.)
+(The user row only exists after a first sign-in, so run this second, not first.)
 
 ---
 
@@ -186,6 +194,28 @@ port, add the new URL there and run `npm run local:setup -- --reset`.
 **No email in the mail catcher.** Check the web app's terminal output for the
 sign-in error, and confirm `NEXT_PUBLIC_SUPABASE_URL` in `apps/web/.env.local`
 matches what `supabase status` reports.
+
+**The magic link opens a blank tab, or bounces back with an error.** Use the
+demo-user button instead; it doesn't touch email at all. If you want magic links
+working, the reliable fix is to make the local email template hand the app a
+token directly. Add to `supabase/config.toml`:
+
+```toml
+[auth.email.template.magic_link]
+subject = "Sign in to CC Integration App"
+content_path = "./supabase/templates/magic_link.html"
+```
+
+and create `supabase/templates/magic_link.html`:
+
+```html
+<h2>Sign in to CC Integration App</h2>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=magiclink">Sign in</a></p>
+```
+
+Then `npm run local:stop && npm run local:setup`. `/auth/confirm` handles both
+that shape and the default one, so either works — but the template above removes
+the redirect hop through Supabase, which is where the default link goes wrong.
 
 **A run sits in "processing" forever.** The worker isn't running or can't reach
 the database. Its terminal output will say which; `curl localhost:8080/ready`
