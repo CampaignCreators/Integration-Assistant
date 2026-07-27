@@ -178,3 +178,33 @@ is to look in the bucket.
   the run id.
 - **Tracing a report.** Every response carries `x-request-id`, and the worker
   logs it against each request. Ask for the id, or find it by run id in the logs.
+
+---
+
+## Offline demo mode (no Anthropic key needed)
+
+Set `LLM_OFFLINE_DEMO=true` on the worker and the four research steps return
+canned findings instead of calling Claude. Everything else runs for real —
+sign-in, uploads, text extraction, Storage, RLS, Realtime progress, the decision
+tree, document generation, downloads, mapping edits, regeneration, the admin
+cost view, and deletion.
+
+Use it to verify a Supabase project and the whole app around the model before an
+API key is available.
+
+**The findings identify themselves as fake.** Every summary carries an
+`[OFFLINE DEMO DATA — not real research]` marker, confidence is forced to `low`,
+and an open question states that nothing was researched. That is deliberate: a
+scoping document that *looked* real but was fabricated would be the worst failure
+this app could have, so an offline document is made obviously unusable rather
+than merely untrustworthy.
+
+`LLM_OFFLINE_DEMO` is **ignored when `NODE_ENV=production`**, and the worker logs
+an error if you try. Never rely on the flag alone to keep demo data out of a
+production deployment — the recommendation still comes from the real decision
+tree, so an offline run produces a genuine-looking recommendation over
+placeholder inputs.
+
+What offline mode does **not** cover: the research quality itself, web search
+grounding and citations, `pause_turn` resumption against the real API, refusal
+handling, and real token costs. Those need a key.

@@ -2,9 +2,27 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { z } from "zod";
 import { logger } from "../lib/logger.js";
 import { estimateCostUsd } from "./pricing.js";
+import { stubStepResult } from "./stub.js";
 import { RESEARCH_TOOLS } from "./tools.js";
 
 export const DEFAULT_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-opus-5";
+
+/**
+ * Offline demo mode returns canned findings instead of calling Claude, so the
+ * rest of the app can be exercised without an API key.
+ *
+ * Refused when NODE_ENV is production. A stub that could switch on in
+ * production would put fabricated findings into a client-facing document, which
+ * is the worst failure this app could have.
+ */
+export const OFFLINE_DEMO =
+  process.env.LLM_OFFLINE_DEMO === "true" && process.env.NODE_ENV !== "production";
+
+if (process.env.LLM_OFFLINE_DEMO === "true" && !OFFLINE_DEMO) {
+  logger.error(
+    "LLM_OFFLINE_DEMO is set but NODE_ENV is production — ignoring it and using the real API"
+  );
+}
 
 /** Anthropic recommends enabling refusal fallbacks on Opus 5 / Fable 5. */
 const FALLBACKS_BETA = "server-side-fallback-2026-07-01";
@@ -86,6 +104,20 @@ export async function runStructuredStep<T>(
   options: RunStepOptions<T>
 ): Promise<StepResult<T>> {
   const model = options.model ?? DEFAULT_MODEL;
+
+  if (OFFLINE_DEMO) {
+    // Validate the canned data against the same schema as a real response, so
+    // the stub cannot drift out of shape and mask a genuine bug.
+    const stub = stubStepResult<unknown>(options.submit.name, options.prompt, model);
+    const parsed = options.schema.safeParse(stub.data);
+    if (!parsed.success) {
+      throw new LlmNoResultError(
+        `Offline demo data for ${options.submit.name} does not match its schema: ${parsed.error.message}`
+      );
+    }
+    return { ...stub, data: parsed.data };
+  }
+
   // Thinking is on by default on Opus 5 and shares the max_tokens budget with
   // the response, so this needs real headroom or results truncate mid-answer.
   const maxTokens = options.maxTokens ?? 32_000;
