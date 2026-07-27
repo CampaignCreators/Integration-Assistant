@@ -29,22 +29,34 @@ The research/generation job runs **asynchronously on the worker** — never insi
 time-limited Vercel function. The web app enqueues a run; the worker claims it from
 Postgres, processes it step by step, and writes status + results back to Supabase.
 
-## Local development
+## Run it locally
 
-Prerequisites: Node.js ≥ 20, a Supabase project (or `supabase start` locally).
+No cloud accounts and no API keys needed. Prerequisites: Node.js ≥ 20, Docker,
+and the [Supabase CLI](https://github.com/supabase/cli#install-the-cli).
+
+```bash
+npm run local:setup      # starts local Supabase, migrates, writes env files
+npm run local:dev        # worker on :8080, web app on :3000
+```
+
+Sign in with any email address and pick the magic link up from the local mail
+catcher at http://127.0.0.1:54324. Research runs in offline demo mode — the
+findings are placeholders and label themselves as such — so everything except
+the research itself is exercised for real. Add an `ANTHROPIC_API_KEY` to
+`apps/worker/.env` to switch to real research.
+
+Full walkthrough, including sample discovery material to feed it:
+[`docs/local-prototype.md`](docs/local-prototype.md).
+
+Configuring it by hand instead:
 
 ```bash
 npm install
-
-# configure env (never commit real values)
 cp apps/web/.env.example apps/web/.env.local
-cp apps/worker/.env.example apps/worker/.env
-
-# apply database migrations to your Supabase project
-supabase db push          # or: supabase start && supabase db reset (local)
-
-npm run dev:worker        # Express worker on :8080
-npm run dev:web           # Next.js on :3000
+cp apps/worker/.env.example apps/worker/.env   # then fill both in
+supabase db push                               # migrate a hosted project
+npm run dev:worker
+npm run dev:web
 ```
 
 ## Checks

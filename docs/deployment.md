@@ -3,6 +3,9 @@
 Three pieces deploy independently: the Next.js app to Vercel, the Express worker
 to a long-running container host, and the database to Supabase.
 
+To run the whole thing on your own machine instead — no cloud accounts, no API
+key — see [`local-prototype.md`](local-prototype.md).
+
 The split is not cosmetic. A research run makes seven Claude calls with web
 search and takes minutes; Vercel functions are time-limited and would cut it
 off. The worker owns all of that. Vercel only ever enqueues work and reads

@@ -12,7 +12,12 @@
     "test": "npm run test --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
     "dev:web": "npm run dev --workspace apps/web",
-    "dev:worker": "npm run dev --workspace apps/worker"
+    "dev:worker": "npm run dev --workspace apps/worker",
+    "local:setup": "bash scripts/dev-setup.sh",
+    "local:dev": "node scripts/dev.mjs",
+    "local:admin": "bash scripts/make-admin.sh",
+    "local:stop": "supabase stop",
+    "local:reset": "supabase db reset"
   },
   "devDependencies": {
     "@eslint/js": "^9.28.0",

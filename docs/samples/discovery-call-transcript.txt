@@ -1,0 +1,83 @@
+SAMPLE FILE — fictional company, invented for testing the intake flow.
+Nothing in here is a real client, a real person, or a real requirement.
+
+Discovery call — Northwind Plumbing & HVAC
+Attendees: Dana (Campaign Creators), Marcus (Northwind, Ops Manager), Priya (Northwind, Sales)
+Duration: 34 min
+
+---
+
+Dana: Thanks for making time. Before we get into the weeds — tell me what a job
+looks like today, from the first phone call to the invoice going out.
+
+Marcus: Sure. A call comes in, the front desk takes it, and they create the
+customer in ServiceTitan. That's our field service system — dispatch,
+scheduling, invoicing, all of it lives there. Then if it's a bigger quote, Priya
+picks it up on the sales side.
+
+Priya: And that's where it falls apart, honestly. Everything I do lives in
+HubSpot. So when the front desk creates a customer in ServiceTitan, I don't
+know about it unless someone tells me. I end up typing the same customer into
+HubSpot by hand — name, email, phone, address. Every single time.
+
+Dana: How many of those a week, roughly?
+
+Priya: Forty? Fifty on a busy week. And I'm sure I fat-finger some of them.
+
+Marcus: We caught one last month where the email had a typo, so the customer
+never got the estimate follow-up. That's a real job we lost.
+
+Dana: Understood. So the first thing is customer records flowing from
+ServiceTitan into HubSpot. What about the other direction — does anything need
+to go back?
+
+Priya: I'd love it if the estimate status came back. When I mark a deal as
+Closed Won in HubSpot, someone still has to go create the job in ServiceTitan.
+
+Marcus: I'd push back a little there. I don't want HubSpot writing into
+ServiceTitan yet. Dispatch is the one thing that can't break — if a bad record
+creates a phantom job, we've got a truck driving to nowhere. Read-only into
+HubSpot first, and we can talk about writing back later.
+
+Priya: That's fair. Start one direction.
+
+Dana: Good, that's a clear scope line. Now, when a customer exists in both
+systems, how do you know it's the same customer?
+
+Priya: Email, mostly. Although a lot of the residential ones give us a phone
+number and no email at all.
+
+Marcus: The commercial accounts always have email. Residential is maybe 70%.
+
+Dana: That's worth flagging — we'll need a fallback when there's no email.
+What about jobs and estimates? Do those need to show up in HubSpot too?
+
+Priya: Jobs would be useful. If I can see that a customer had three service
+calls this year, that changes how I talk to them about a maintenance plan.
+
+Dana: How current does that need to be? Live, or is nightly enough?
+
+Priya: Same day is fine for job history. But a new customer I'd want quickly —
+within the hour, ideally, because I'm often calling them back that afternoon.
+
+Dana: Noted — near-real-time for customers, nightly is fine for job history.
+Roughly how many customer records are in ServiceTitan today?
+
+Marcus: Somewhere around 12,000. We've been on it four years.
+
+Dana: And do you have API access on your ServiceTitan plan? Some tiers don't.
+
+Marcus: I genuinely don't know. Our account manager mentioned an integrations
+add-on at some point. I'd have to ask.
+
+Dana: That's fine — we'll research it and confirm with you. Last thing: is
+there anyone technical on your side who'd own this?
+
+Marcus: Not really. We've got an IT contractor who does maybe four hours a
+month. Whatever we build, we can't be maintaining it ourselves.
+
+Dana: Then low-maintenance matters more than clever. Let me go do the research
+and come back with options.
+
+Marcus: One more thing — we're mid-season. Whatever this is, it can't take the
+system down during the day.
