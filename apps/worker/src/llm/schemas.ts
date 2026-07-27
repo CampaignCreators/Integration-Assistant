@@ -344,3 +344,122 @@ export const middlewareSchema = z.object({
 export type MiddlewareResult = z.infer<typeof middlewareSchema>;
 
 export type Confidence = (typeof CONFIDENCE)[number];
+
+// ───────────────────────────────────────────── narrative (spec §5.5.1)
+
+/**
+ * The prose around the recommendation. The approach itself is decided in code
+ * (`pipeline/decide.ts`) and passed in — the model explains it, it does not
+ * choose it.
+ */
+export const narrativeJsonSchema = obj({
+  business_goal: str(
+    "Two or three sentences on what the client is trying to achieve and why, in " +
+      "their language, drawn from the brief and the discovery material."
+  ),
+  rationale: str(
+    "Three to five sentences explaining the recommended approach to a " +
+      "non-technical reader. Explain the reasoning given, do not re-decide it."
+  ),
+  assumptions: strArray(
+    "Things taken as true that nobody has confirmed yet."
+  ),
+  risks: strArray(
+    "What could go wrong or cost more than expected, stated concretely."
+  ),
+  dependencies: strArray(
+    "What the client or a third party must provide before work can start."
+  ),
+  open_questions: strArray(
+    "Questions to put to the client or vendor before committing to this scope."
+  ),
+  implementation_notes: strArray(
+    "High-level build notes: authentication, webhooks versus polling, rate-limit " +
+      "handling, error and retry behaviour, initial backfill."
+  ),
+});
+
+export const narrativeSchema = z.object({
+  business_goal: z.string(),
+  rationale: z.string(),
+  assumptions: z.array(z.string()),
+  risks: z.array(z.string()),
+  dependencies: z.array(z.string()),
+  open_questions: z.array(z.string()),
+  implementation_notes: z.array(z.string()),
+});
+export type NarrativeResult = z.infer<typeof narrativeSchema>;
+
+// ───────────────────────────────────────────── field mappings (spec §5.5.2)
+
+export const mappingsJsonSchema = obj({
+  rows: {
+    type: "array",
+    description:
+      "One row per field that needs to move. Derive these from the objects in " +
+      "scope and the properties established during research — never invent a " +
+      "field name that did not appear in the research findings.",
+    items: obj({
+      source_system: enumOf(
+        ["hubspot", "target"],
+        "Which system this field originates in."
+      ),
+      source_obj: str("The originating object, as that system names it."),
+      source_field: str(
+        "The originating field, as that system names it. If the research did not " +
+          "establish a field name, write UNKNOWN and explain in notes."
+      ),
+      target_obj: str("The destination object, as that system names it."),
+      target_field: str(
+        "The destination field. If it does not exist yet, name the custom " +
+          "property that will need creating and say so in notes."
+      ),
+      direction: enumOf(
+        ["one_way", "two_way"],
+        "Whether this specific field syncs one way or both ways. A field can be " +
+          "one-way even in a two-way integration."
+      ),
+      transform: nullableStr(
+        "The conversion needed: a type cast, date format change, value/picklist " +
+          "mapping, concatenation, or a lookup. Null if the value copies across as-is."
+      ),
+      required: bool("Whether the destination system requires this field."),
+      match_key: bool(
+        "Whether this field is used to match existing records so the sync updates " +
+          "rather than duplicating."
+      ),
+      notes: nullableStr(
+        "Anything the implementer needs: a custom property to create, a gap, an " +
+          "uncertainty, or a judgement call you made."
+      ),
+    }),
+  },
+  match_strategy: str(
+    "How records will be matched between the systems overall, and what happens " +
+      "when no match is found."
+  ),
+  gaps: strArray(
+    "Fields the client asked for that have no home on the other side, and fields " +
+      "you could not map because research did not establish them."
+  ),
+});
+
+export const mappingsSchema = z.object({
+  rows: z.array(
+    z.object({
+      source_system: z.enum(["hubspot", "target"]),
+      source_obj: z.string(),
+      source_field: z.string(),
+      target_obj: z.string(),
+      target_field: z.string(),
+      direction: z.enum(["one_way", "two_way"]),
+      transform: z.string().nullable(),
+      required: z.boolean(),
+      match_key: z.boolean(),
+      notes: z.string().nullable(),
+    })
+  ),
+  match_strategy: z.string(),
+  gaps: z.array(z.string()),
+});
+export type MappingsResult = z.infer<typeof mappingsSchema>;

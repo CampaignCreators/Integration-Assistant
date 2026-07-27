@@ -14,7 +14,14 @@ import type {
   TargetResult,
 } from "../llm/schemas.js";
 import { logEvent, runStep } from "./runner.js";
+import { DECIDE_STEP, decideAndNarrate, type DecisionOutcome } from "./steps/decide.js";
 import { EXTRACT_SIGNALS_STEP, extractSignals } from "./steps/extractSignals.js";
+import {
+  MAPPINGS_STEP,
+  buildMappings,
+  type MappingOutcome,
+} from "./steps/buildMappings.js";
+import { GENERATE_STEP, generateDeliverables } from "./steps/generate.js";
 import {
   HUBSPOT_STEP,
   MARKETPLACE_STEP,
@@ -134,24 +141,90 @@ export async function runResearchPhase(runId: string): Promise<void> {
     ]);
 
     // Middleware depends on the target verdict, so it runs after.
-    await runStep<MiddlewareResult>(ctx, MIDDLEWARE_STEP, {
+    const middleware = await runStep<MiddlewareResult>(ctx, MIDDLEWARE_STEP, {
       hasResult: () => findExistingFinding<MiddlewareResult>(runId, "middleware"),
       execute: () => assessMiddleware(run, brief, target, marketplace),
     });
 
-    void hubspot;
+    await logEvent(runId, "pipeline", "progress", "Writing your documents");
+    await setStatus(runId, "generating");
+    await runOutputPhase(runId, { hubspot, target, marketplace, middleware });
 
-    // Phase 3 turns these findings into a recommendation and the deliverables.
-    await logEvent(
-      runId,
-      "pipeline",
-      "succeeded",
-      "Research complete with sources recorded"
-    );
+    await logEvent(runId, "pipeline", "succeeded", "Your documents are ready");
     await setStatus(runId, "complete");
   } catch (err) {
     await failRun(runId, err);
   }
+}
+
+/**
+ * Phase 3: decide the approach, build the mapping table, render both
+ * deliverables. Split out so `POST /runs/:id/generate` can re-run just this
+ * part after a reviewer edits the mappings.
+ */
+export async function runOutputPhase(
+  runId: string,
+  findings: {
+    hubspot: HubSpotResult;
+    target: TargetResult;
+    marketplace: MarketplaceResult;
+    middleware: MiddlewareResult;
+  },
+  options: { reuseDecision?: boolean } = {}
+): Promise<void> {
+  const ctx = { runId };
+  const { run, brief } = await loadRun(runId);
+  const signals = await loadConfirmedSignals(runId);
+
+  const { decision, narrative } = await runStep<DecisionOutcome>(ctx, DECIDE_STEP, {
+    hasResult: options.reuseDecision
+      ? () => Promise.resolve(existingDecision(run))
+      : undefined,
+    execute: () => decideAndNarrate(run, brief, findings, signals),
+  });
+
+  // Re-read the run so the mapping sheet's "About" tab shows the approach.
+  const { run: decided } = await loadRun(runId);
+
+  const mapping = await runStep<MappingOutcome>(ctx, MAPPINGS_STEP, {
+    execute: () => buildMappings(decided, brief, findings.hubspot, findings.target, decision.approach),
+  });
+
+  await runStep(ctx, GENERATE_STEP, {
+    execute: () =>
+      generateDeliverables({
+        run: decided,
+        brief,
+        decision,
+        narrative,
+        findings,
+        mappings: mapping.rows,
+        matchStrategy: mapping.match_strategy,
+        mappingGaps: mapping.gaps,
+      }),
+  });
+}
+
+/**
+ * Rebuilds a stored decision so regenerating a document after a mapping edit
+ * does not re-run (or re-charge for) the decision step.
+ */
+export function existingDecision(run: RunRow): DecisionOutcome | null {
+  const details = run.approach_details_json;
+  if (!run.recommended_approach || !run.confidence || !details?.narrative) {
+    return null;
+  }
+  return {
+    decision: {
+      approach: run.recommended_approach,
+      basis: details.basis,
+      override_applied: details.override_applied,
+      confidence: run.confidence,
+      uncertainty_drivers: details.uncertainty_drivers,
+      alternatives_considered: details.alternatives_considered,
+    },
+    narrative: details.narrative,
+  };
 }
 
 async function failRun(runId: string, err: unknown): Promise<void> {

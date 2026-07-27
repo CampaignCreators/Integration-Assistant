@@ -59,6 +59,28 @@ export type FindingSide = (typeof FINDING_SIDES)[number];
 export const DELIVERABLE_KINDS = ["requirements_doc", "mapping_sheet"] as const;
 export type DeliverableKind = (typeof DELIVERABLE_KINDS)[number];
 
+/** The recommended approaches from the spec §5.4 decision tree. */
+export const APPROACHES = [
+  "native",
+  "native_plus_custom",
+  "custom",
+  "middleware",
+  "not_integrable",
+] as const;
+export type Approach = (typeof APPROACHES)[number];
+
+export const CONFIDENCE_LEVELS = ["high", "medium", "low"] as const;
+export type ConfidenceLevel = (typeof CONFIDENCE_LEVELS)[number];
+
+/** Plain-language names for the approaches, safe to show a rep or a client. */
+export const APPROACH_LABELS: Record<Approach, string> = {
+  native: "Use the ready-made HubSpot integration",
+  native_plus_custom: "Ready-made integration plus a custom piece",
+  custom: "Build a custom integration",
+  middleware: "Connect it with Make or Zapier",
+  not_integrable: "Not connectable as things stand",
+};
+
 export const SIGNAL_CATEGORIES = [
   "system",
   "entity",
@@ -100,11 +122,41 @@ export interface RunRow {
   direction: SyncDirection | null;
   frequency: SyncFrequency | null;
   status: RunStatus;
-  recommended_approach: string | null;
-  confidence: string | null;
+  recommended_approach: Approach | null;
+  confidence: ConfidenceLevel | null;
+  approach_rationale: string | null;
+  approach_details_json: ApproachDetails | null;
   error_message: string | null;
   created_at: string;
   updated_at: string;
+}
+
+/** The prose sections of the requirements document. */
+export interface Narrative {
+  business_goal: string;
+  rationale: string;
+  assumptions: string[];
+  risks: string[];
+  dependencies: string[];
+  open_questions: string[];
+  implementation_notes: string[];
+}
+
+/**
+ * Why the recommendation came out the way it did (spec §5.4, §8.2), plus the
+ * prose written to explain it. Stored whole so regenerating a document does not
+ * need to re-run the decision step.
+ */
+export interface ApproachDetails {
+  /** The decision-tree condition that matched, in plain language. */
+  basis: string;
+  /** Any documented override that was applied on top of the base rule. */
+  override_applied: string | null;
+  /** What makes this recommendation less than certain. */
+  uncertainty_drivers: string[];
+  /** Approaches ruled out, and why. */
+  alternatives_considered: { approach: Approach; why_not: string }[];
+  narrative: Narrative;
 }
 
 export interface BriefRow {

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type {
+  DeliverableRow,
   ExtractedSignalRow,
+  FieldMappingRow,
   ResearchFindingRow,
   RunDetail,
   RunEventRow,
@@ -11,6 +13,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { IntakeWizard } from "@/components/intake/wizard";
 import { FindingsView } from "@/components/run/findings-view";
 import { ProcessingView } from "@/components/run/processing-view";
+import { ResultsView } from "@/components/run/results-view";
 import { SignalConfirmation } from "@/components/run/signal-confirmation";
 import {
   DIRECTION_LABELS,
@@ -69,18 +72,31 @@ export default async function RunPage({
             <div className="mt-8">
               <SignalConfirmation runId={run.id} signals={await loadSignals(run.id)} />
             </div>
-          ) : (
+          ) : null}
+
+          {run.status === "complete" ? <Results run={run} /> : null}
+
+          {run.status !== "awaiting_confirmation" && run.status !== "complete" ? (
             <ProcessingView
               runId={run.id}
               status={run.status}
               initialEvents={await loadEvents(run.id)}
             />
-          )}
+          ) : null}
+
           <Findings runId={run.id} />
         </>
       )}
     </div>
   );
+}
+
+async function Results({ run }: { run: RunDetail["run"] }) {
+  const [{ mappings }, { deliverables }] = await Promise.all([
+    workerFetch<{ mappings: FieldMappingRow[] }>(`/runs/${run.id}/mappings`),
+    workerFetch<{ deliverables: DeliverableRow[] }>(`/runs/${run.id}/deliverables`),
+  ]);
+  return <ResultsView run={run} mappings={mappings} deliverables={deliverables} />;
 }
 
 async function loadSignals(runId: string): Promise<ExtractedSignalRow[]> {

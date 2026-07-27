@@ -187,6 +187,115 @@ false — that is a perfectly normal outcome.`,
   };
 }
 
+export function narrativePrompt(
+  run: RunRow,
+  brief: BriefRow | null,
+  decision: {
+    approachLabel: string;
+    basis: string;
+    override_applied: string | null;
+    confidence: string;
+    uncertainty_drivers: string[];
+  },
+  findings: { summary: string }[],
+  signals: string[]
+): { system: string; prompt: string } {
+  return {
+    system: `${GUARDRAILS}
+
+For this step you are writing, not researching or deciding. The recommended
+approach has already been determined by a fixed decision framework and is given
+to you below. Explain it — do not re-open it, argue with it, or substitute your
+own recommendation. If you think it is wrong, note the concern in risks and
+still explain the recommendation as given.
+
+Write for a smart reader who does not know what an API is. No jargon without a
+plain-language gloss. Short sentences. No marketing language.`,
+    prompt: `Write the narrative sections of an integration requirements document.
+
+THE BRIEF:
+${briefContext(run, brief)}
+
+WHAT THE DISCOVERY MATERIAL TOLD US:
+${signals.length > 0 ? signals.join("\n") : "(nothing beyond the brief)"}
+
+WHAT THE RESEARCH ESTABLISHED:
+${findings.map((f) => `- ${f.summary}`).join("\n")}
+
+THE DECISION (already made — explain this, do not change it):
+- Recommended approach: ${decision.approachLabel}
+- Why this rule applied: ${decision.basis}
+${decision.override_applied ? `- Adjustment applied: ${decision.override_applied}` : ""}
+- Confidence: ${decision.confidence}
+${
+  decision.uncertainty_drivers.length > 0
+    ? `- What makes it less than certain:\n${decision.uncertainty_drivers.map((d) => `  - ${d}`).join("\n")}`
+    : ""
+}
+
+Write the business goal, then the rationale for the recommendation, then the
+assumptions, risks, dependencies, open questions, and implementation notes.
+
+Be specific and useful rather than generic. "Data quality may be an issue" helps
+nobody; "the target system stores full names in one field while HubSpot splits
+first and last, so names will need parsing and some will parse wrong" does. Draw
+your assumptions and risks from what the research actually found, including the
+things it could not confirm.`,
+  };
+}
+
+export function mappingsPrompt(
+  run: RunRow,
+  brief: BriefRow | null,
+  hubspot: unknown,
+  target: unknown,
+  approachLabel: string
+): { system: string; prompt: string } {
+  return {
+    system: `${GUARDRAILS}
+
+For this step you are building a field mapping table from research that has
+already been done. Do not search — work from the findings given to you.
+
+The single most important rule: do not invent field names. If the research
+established a field, use it. If it did not, write UNKNOWN in that cell and
+explain what is missing in the notes. A mapping table with honest gaps can be
+completed by a solutions engineer in ten minutes; one with plausible-looking
+invented fields will be trusted, implemented, and will fail.`,
+    prompt: `Build the data mapping table for this integration.
+
+THE BRIEF:
+${briefContext(run, brief)}
+Recommended approach: ${approachLabel}
+
+HUBSPOT RESEARCH FINDINGS:
+${JSON.stringify(hubspot, null, 2)}
+
+TARGET SOFTWARE RESEARCH FINDINGS:
+${JSON.stringify(target, null, 2)}
+
+Produce one row per field that needs to move between the systems, covering the
+records in scope. For each row give the originating object and field, the
+destination object and field, whether that particular field flows one way or
+both ways, any conversion needed, whether the destination requires it, and
+whether it is used to match records.
+
+Work through the objects in scope one at a time. Start with the fields needed to
+match records — an email address, a domain, an external ID — since without those
+the sync creates duplicates instead of updating. Then the fields that carry the
+business value described in the brief. You do not need to map every field either
+system has; map what this integration needs.
+
+Where the destination has no equivalent field, name the custom property that
+will need creating and flag it in the notes. Where the research did not
+establish enough to map a field the brief clearly needs, put UNKNOWN in that
+cell and record it in gaps — that is a useful finding, not a failure.
+
+Respect the direction in the brief: if data flows one way overall, no individual
+field should be marked two-way.`,
+  };
+}
+
 export function middlewarePrompt(
   run: RunRow,
   brief: BriefRow | null,
