@@ -1,37 +1,43 @@
-import type { RunRow } from "@cc/shared";
 import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
 import { supabase } from "../lib/supabase.js";
 
 /**
- * Postgres-backed job queue: claims the oldest `queued` run atomically
- * (FOR UPDATE SKIP LOCKED inside claim_next_run) and processes it.
+ * Postgres-backed job queue. `claim_next_run()` claims the oldest queued run
+ * atomically (FOR UPDATE SKIP LOCKED), so several worker instances can run
+ * side by side without processing a run twice.
  *
- * The actual pipeline lands in Phase 2 — for now a claimed run is failed
- * with an explanatory event, so nothing silently disappears.
+ * The pipeline itself lands in Phase 2. Until then this loop deliberately does
+ * NOT claim anything: submitted runs stay `queued` — which is the truth — and
+ * will be picked up as soon as the pipeline exists. It logs the backlog so the
+ * wait is visible in the worker logs.
  */
 export function startPoller(): void {
   let stopped = false;
+  let lastReportedBacklog = -1;
 
   async function tick(): Promise<void> {
     if (stopped) return;
-    let claimed = false;
     try {
-      const { data, error } = await supabase.rpc("claim_next_run");
+      const { count, error } = await supabase
+        .from("runs")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "queued");
       if (error) {
-        logger.error({ err: error.message }, "claim_next_run failed");
-      } else {
-        const run = (Array.isArray(data) ? data[0] : data) as RunRow | undefined;
-        if (run) {
-          claimed = true;
-          await processRun(run);
+        logger.error({ err: error.message }, "failed to read queue depth");
+      } else if (count !== null && count !== lastReportedBacklog) {
+        lastReportedBacklog = count;
+        if (count > 0) {
+          logger.warn(
+            { queued: count },
+            "runs are waiting — the research pipeline arrives in Phase 2"
+          );
         }
       }
     } catch (err) {
       logger.error({ err }, "poller tick failed");
     }
-    // Drain the queue quickly; idle at the configured interval.
-    setTimeout(tick, claimed ? 0 : config.pollIntervalMs);
+    setTimeout(tick, config.pollIntervalMs);
   }
 
   void tick();
@@ -39,18 +45,6 @@ export function startPoller(): void {
     stopped = true;
   });
   logger.info({ intervalMs: config.pollIntervalMs }, "queue poller started");
-}
-
-async function processRun(run: RunRow): Promise<void> {
-  logger.info({ runId: run.id }, "claimed run");
-  await logEvent(run.id, "pipeline", "started", "Run claimed by worker");
-
-  const message = "Pipeline not implemented yet (arrives in Phase 2)";
-  await logEvent(run.id, "pipeline", "failed", message);
-  await supabase
-    .from("runs")
-    .update({ status: "failed", error_message: message })
-    .eq("id", run.id);
 }
 
 export async function logEvent(

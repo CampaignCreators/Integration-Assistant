@@ -94,10 +94,20 @@ dependency is dropped entirely.
   plain text, stored on `uploads.extracted_text`).
 - Signed-upload-URL endpoint (worker) so the browser uploads directly to Storage.
 
-**Schema changes (0002):** none structural beyond Phase 0; add `uploads.status`
-(`uploaded/extracted/failed`) and `runs.title` if needed.
+**Schema changes:** none — `uploads.status` and `runs.title` were already included in
+`0001_init.sql`, so Phase 1 needs no new migration.
 
-**API routes added:** `POST /runs/:id/uploads`, `POST /runs/:id/upload-url`.
+**API routes added:** `POST /runs/:id/upload-url`, `POST /runs/:id/uploads`,
+`DELETE /runs/:id/uploads/:uploadId`, `PUT /runs/:id/intake`, `POST /runs/:id/submit`.
+
+**Deliberate deviation from spec §7.** The spec sketches a single
+`POST /runs` that both creates a run and enqueues processing, with "upload ids" in the
+body. That ordering is not implementable: files must be uploaded to Storage under a
+`<run_id>/` prefix *before* they can be registered, so the run id has to exist first.
+The implemented flow splits it into `POST /runs` (creates a `draft`),
+`PUT /runs/:id/intake` (autosaves brief answers between wizard steps so a refresh
+never loses work), and `POST /runs/:id/submit` (validates the brief, flips status to
+`queued`). All mutating intake routes reject a run that is no longer `draft`.
 
 ### Phase 2 — Research core
 

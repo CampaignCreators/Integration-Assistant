@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
-import { createRunSchema } from "@cc/shared";
+import { createRunSchema, intakeSchema, validateSubmittable } from "@cc/shared";
 import type { RunRow } from "@cc/shared";
 import { supabase } from "../lib/supabase.js";
 import { isElevated, requireAuth } from "../middleware/auth.js";
@@ -123,4 +123,102 @@ runsRouter.get("/:id", async (req, res) => {
   }
 
   res.json({ run, brief: briefResult.data, uploads: uploadsResult.data });
+});
+
+// PUT /runs/:id/intake — save the guided brief (autosaved between wizard steps).
+runsRouter.put("/:id/intake", async (req, res) => {
+  const run = await loadRunChecked(req, res);
+  if (!run) return;
+  if (run.status !== "draft") {
+    res.status(409).json({ error: "The brief can only be edited while a run is a draft" });
+    return;
+  }
+
+  const parsed = intakeSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid body", details: parsed.error.flatten() });
+    return;
+  }
+  const input = parsed.data;
+
+  const runPatch: Record<string, unknown> = {};
+  if (input.target_software !== undefined) runPatch.target_software = input.target_software || null;
+  if (input.direction !== undefined) runPatch.direction = input.direction;
+  if (input.frequency !== undefined) runPatch.frequency = input.frequency;
+  if (Object.keys(runPatch).length > 0) {
+    const { error } = await supabase.from("runs").update(runPatch).eq("id", run.id);
+    if (error) {
+      res.status(500).json({ error: error.message });
+      return;
+    }
+  }
+
+  const briefPatch: Record<string, unknown> = {};
+  if (input.description !== undefined) briefPatch.description = input.description || null;
+  if (input.objects !== undefined) briefPatch.objects = input.objects;
+  if (input.trigger_event !== undefined) briefPatch.trigger_event = input.trigger_event || null;
+  if (input.volume !== undefined) briefPatch.volume = input.volume;
+  if (Object.keys(briefPatch).length > 0) {
+    const { error } = await supabase.from("brief").update(briefPatch).eq("run_id", run.id);
+    if (error) {
+      res.status(500).json({ error: error.message });
+      return;
+    }
+  }
+
+  const [updatedRun, updatedBrief] = await Promise.all([
+    supabase.from("runs").select("*").eq("id", run.id).single(),
+    supabase.from("brief").select("*").eq("run_id", run.id).single(),
+  ]);
+  res.json({ run: updatedRun.data, brief: updatedBrief.data });
+});
+
+// POST /runs/:id/submit — validate the brief and enqueue processing.
+runsRouter.post("/:id/submit", async (req, res) => {
+  const run = await loadRunChecked(req, res);
+  if (!run) return;
+  if (run.status !== "draft") {
+    res.status(409).json({ error: "This run has already been submitted" });
+    return;
+  }
+
+  const { data: brief, error: briefError } = await supabase
+    .from("brief")
+    .select("objects")
+    .eq("run_id", run.id)
+    .single();
+  if (briefError || !brief) {
+    res.status(500).json({ error: briefError?.message ?? "Brief not found" });
+    return;
+  }
+
+  const problems = validateSubmittable({
+    target_software: run.target_software,
+    direction: run.direction,
+    frequency: run.frequency,
+    objects: brief.objects ?? [],
+  });
+  if (problems.length > 0) {
+    res.status(422).json({ error: "The brief is incomplete", problems });
+    return;
+  }
+
+  const { data: updated, error } = await supabase
+    .from("runs")
+    .update({ status: "queued", error_message: null })
+    .eq("id", run.id)
+    .select("*")
+    .single();
+  if (error || !updated) {
+    res.status(500).json({ error: error?.message ?? "Failed to submit run" });
+    return;
+  }
+  await supabase.from("run_events").insert({
+    run_id: run.id,
+    step: "intake",
+    status: "succeeded",
+    message: "Brief submitted; run queued for processing",
+  });
+
+  res.json({ run: updated });
 });

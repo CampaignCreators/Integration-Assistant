@@ -2,7 +2,7 @@ import type { RunStatus } from "@cc/shared";
 
 const LABELS: Record<RunStatus, string> = {
   draft: "Draft",
-  queued: "Queued",
+  queued: "Waiting to start",
   extracting: "Reading files",
   awaiting_confirmation: "Needs your review",
   researching: "Researching",

@@ -3,7 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 export class WorkerApiError extends Error {
   constructor(
     message: string,
-    public status: number
+    public status: number,
+    /** Field-level problems the worker reported (e.g. an incomplete brief). */
+    public problems?: string[]
   ) {
     super(message);
     this.name = "WorkerApiError";
@@ -44,13 +46,15 @@ export async function workerFetch<T>(
 
   if (!response.ok) {
     let message = `Worker request failed (${response.status})`;
+    let problems: string[] | undefined;
     try {
-      const body = (await response.json()) as { error?: string };
+      const body = (await response.json()) as { error?: string; problems?: string[] };
       if (body.error) message = body.error;
+      if (Array.isArray(body.problems)) problems = body.problems;
     } catch {
       // keep default message
     }
-    throw new WorkerApiError(message, response.status);
+    throw new WorkerApiError(message, response.status, problems);
   }
 
   return (await response.json()) as T;
