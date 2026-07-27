@@ -1,9 +1,17 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
-import { createRunSchema, intakeSchema, validateSubmittable } from "@cc/shared";
+import {
+  createRunSchema,
+  intakeSchema,
+  isWorking,
+  validateSubmittable,
+} from "@cc/shared";
 import type { RunRow } from "@cc/shared";
+import { logger } from "../lib/logger.js";
 import { supabase } from "../lib/supabase.js";
 import { isElevated, requireAuth } from "../middleware/auth.js";
+import { deleteRunAndFiles } from "../pipeline/deleteRun.js";
+import { resumeRun } from "../pipeline/processRun.js";
 
 export const runsRouter = Router();
 
@@ -124,6 +132,92 @@ runsRouter.get("/:id", async (req, res) => {
 
   res.json({ run, brief: briefResult.data, uploads: uploadsResult.data });
 });
+
+/**
+ * DELETE /runs/:id — remove a run and every file belonging to it.
+ *
+ * Discovery transcripts contain client PII (spec §10), so deletion has to reach
+ * Storage as well as the database. Restricted to the run's owner and admins:
+ * a reviewer can correct a run but not destroy someone else's evidence.
+ */
+runsRouter.delete("/:id", async (req, res) => {
+  const run = await loadRunChecked(req, res);
+  if (!run) return;
+  const user = req.user!;
+
+  if (run.user_id !== user.id && user.role !== "admin") {
+    res.status(403).json({ error: "Only the person who created a run, or an admin, can delete it" });
+    return;
+  }
+  if (isWorking(run.status)) {
+    res.status(409).json({
+      error: "This run is still being processed. Wait for it to finish, then delete it.",
+    });
+    return;
+  }
+
+  try {
+    const report = await deleteRunAndFiles(run.id);
+    res.json({ ok: true, ...report });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Could not delete this run";
+    logger.error({ err: message, runId: run.id }, "run deletion failed");
+    res.status(500).json({ error: message });
+  }
+});
+
+/**
+ * POST /runs/:id/retry — pick a failed run back up from where it stopped.
+ *
+ * Distinct from reprocess: this keeps the findings that already succeeded and
+ * only re-runs what did not, so a transient failure costs one step rather than
+ * a whole run.
+ */
+runsRouter.post("/:id/retry", async (req, res) => {
+  const run = await loadRunChecked(req, res);
+  if (!run) return;
+
+  if (run.status !== "failed") {
+    res.status(409).json({ error: "Only a failed run can be retried" });
+    return;
+  }
+
+  // Resume from the furthest phase whose work is already stored.
+  const resumeStatus = (await hasAnyFinding(run.id)) ? "researching" : "queued";
+  const { error } = await supabase
+    .from("runs")
+    .update({ status: resumeStatus, error_message: null, heartbeat_at: null })
+    .eq("id", run.id)
+    .eq("status", "failed");
+  if (error) {
+    res.status(500).json({ error: error.message });
+    return;
+  }
+
+  await supabase.from("run_events").insert({
+    run_id: run.id,
+    step: "pipeline",
+    status: "started",
+    message: "Retrying from where it stopped — finished steps are kept",
+  });
+
+  if (resumeStatus === "researching") {
+    void resumeRun(run.id).catch((err) => {
+      logger.error({ err, runId: run.id }, "retry crashed");
+    });
+  }
+  // A `queued` run is picked up by the poller on its next tick.
+
+  res.json({ ok: true, resumed_at: resumeStatus });
+});
+
+async function hasAnyFinding(runId: string): Promise<boolean> {
+  const { count } = await supabase
+    .from("research_findings")
+    .select("id", { count: "exact", head: true })
+    .eq("run_id", runId);
+  return (count ?? 0) > 0;
+}
 
 // PUT /runs/:id/intake — save the guided brief (autosaved between wizard steps).
 runsRouter.put("/:id/intake", async (req, res) => {

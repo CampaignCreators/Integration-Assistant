@@ -128,8 +128,21 @@ export interface RunRow {
   approach_details_json: ApproachDetails | null;
   mapping_meta_json: MappingMeta | null;
   error_message: string | null;
+  /** Last time a worker reported progress; null if never processed. */
+  heartbeat_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+/** Run states where a worker should be actively doing something. */
+export const WORKING_STATUSES: RunStatus[] = [
+  "extracting",
+  "researching",
+  "generating",
+];
+
+export function isWorking(status: RunStatus): boolean {
+  return WORKING_STATUSES.includes(status);
 }
 
 /** The prose sections of the requirements document. */

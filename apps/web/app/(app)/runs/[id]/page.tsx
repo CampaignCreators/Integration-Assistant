@@ -12,6 +12,8 @@ import { workerFetch, WorkerApiError } from "@/lib/worker-api";
 import { StatusBadge } from "@/components/status-badge";
 import { IntakeWizard } from "@/components/intake/wizard";
 import { FindingsView } from "@/components/run/findings-view";
+import { DeleteRun } from "@/components/run/delete-run";
+import { FailedRunActions } from "@/components/run/failed-run-actions";
 import { ProcessingView } from "@/components/run/processing-view";
 import { ResultsView } from "@/components/run/results-view";
 import { SignalConfirmation } from "@/components/run/signal-confirmation";
@@ -54,11 +56,12 @@ export default async function RunPage({
         <StatusBadge status={run.status} />
       </div>
 
-      {run.error_message ? (
-        <div className="mt-4 rounded-lg bg-red-50 p-4 text-sm text-red-800" role="alert">
-          <strong className="font-semibold">This run stopped: </strong>
-          {run.error_message}
-        </div>
+      {run.status === "failed" ? (
+        <FailedRunActions
+          runId={run.id}
+          errorMessage={run.error_message}
+          events={await loadEvents(run.id)}
+        />
       ) : null}
 
       {run.status === "draft" ? (
@@ -87,6 +90,11 @@ export default async function RunPage({
           <Findings runId={run.id} />
         </>
       )}
+
+      <DeleteRun
+        runId={run.id}
+        label={run.target_software ?? run.title ?? "this run"}
+      />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import type {
   MiddlewareResult,
   TargetResult,
 } from "../llm/schemas.js";
+import { makeBrief, makeRun } from "../test-support/fixtures.js";
 import { decideApproach } from "./decide.js";
 
 /**
@@ -13,40 +14,8 @@ import { decideApproach } from "./decide.js";
  * than no recommendation, because it will be believed.
  */
 
-function run(overrides: Partial<RunRow> = {}): RunRow {
-  return {
-    id: "run-1",
-    user_id: "user-1",
-    title: null,
-    target_software: "Stripe",
-    direction: "two_way",
-    frequency: "near_realtime",
-    status: "researching",
-    recommended_approach: null,
-    confidence: null,
-    approach_rationale: null,
-    approach_details_json: null,
-    mapping_meta_json: null,
-    error_message: null,
-    created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z",
-    ...overrides,
-  };
-}
-
-function brief(overrides: Partial<BriefRow> = {}): BriefRow {
-  return {
-    id: "brief-1",
-    run_id: "run-1",
-    objects: ["contacts", "deals"],
-    trigger_event: null,
-    volume: "1k_10k",
-    description: null,
-    created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z",
-    ...overrides,
-  };
-}
+const run = makeRun;
+const brief = makeBrief;
 
 function target(overrides: Partial<TargetResult> = {}): TargetResult {
   return {

@@ -83,6 +83,35 @@ async function setStatus(
   }
 }
 
+/**
+ * Re-enters the pipeline at whichever phase a run had reached, used both to
+ * recover an orphan and to let a user retry a failed run without paying again
+ * for the steps that already succeeded.
+ *
+ * `extracting` restarts extraction; `researching` and `generating` both go
+ * through the research phase, whose steps skip themselves if already done and
+ * which ends by producing the deliverables.
+ */
+export async function resumeRun(runId: string): Promise<void> {
+  const { run } = await loadRun(runId);
+
+  switch (run.status) {
+    case "queued":
+    case "extracting":
+      return runExtractionPhase(runId);
+    case "researching":
+    case "generating":
+      return runResearchPhase(runId);
+    case "awaiting_confirmation":
+      // Waiting on a person, not on us — nothing to resume.
+      logger.info({ runId }, "run is awaiting confirmation; nothing to resume");
+      return;
+    default:
+      logger.info({ runId, status: run.status }, "run is not resumable");
+      return;
+  }
+}
+
 /** Phase 1: read the uploaded material, then hand back to the rep. */
 export async function runExtractionPhase(runId: string): Promise<void> {
   const ctx = { runId };

@@ -17,6 +17,7 @@ import {
   renderMappingSheet,
 } from "./mappingSheet.js";
 import { renderRequirementsDoc } from "./requirementsDoc.js";
+import { makeBrief, makeMapping, makeRun } from "../test-support/fixtures.js";
 import { deliverableFilename } from "./store.js";
 
 /**
@@ -26,10 +27,7 @@ import { deliverableFilename } from "./store.js";
 
 const generatedAt = new Date("2026-03-15T12:00:00Z");
 
-const run: RunRow = {
-  id: "run-1",
-  user_id: "user-1",
-  title: null,
+const run: RunRow = makeRun({
   target_software: "ServiceTitan",
   direction: "target_to_hubspot",
   frequency: "daily",
@@ -37,23 +35,13 @@ const run: RunRow = {
   recommended_approach: "custom",
   confidence: "medium",
   approach_rationale: "A custom build is the only route that covers the brief.",
-  approach_details_json: null,
-  mapping_meta_json: null,
-  error_message: null,
-  created_at: "2026-01-01T00:00:00Z",
-  updated_at: "2026-01-01T00:00:00Z",
-};
+});
 
-const brief: BriefRow = {
-  id: "brief-1",
-  run_id: "run-1",
-  objects: ["contacts", "deals"],
+const brief: BriefRow = makeBrief({
   trigger_event: "A job is marked complete",
   volume: "10k_100k",
   description: "Bring completed jobs into HubSpot as deals.",
-  created_at: "2026-01-01T00:00:00Z",
-  updated_at: "2026-01-01T00:00:00Z",
-};
+});
 
 const decision: Decision = {
   approach: "custom",
@@ -143,25 +131,15 @@ const findings = {
 };
 
 function mapping(overrides: Partial<FieldMappingRow> = {}): FieldMappingRow {
-  return {
-    id: "map-1",
-    run_id: "run-1",
+  return makeMapping({
     source_obj: "ServiceTitan · Job",
     source_field: "customerName",
     target_obj: "HubSpot · Contacts",
     target_field: "firstname",
-    direction: "one_way",
     transform: "Split full name on the first space",
-    required: true,
     match_key: false,
-    notes: null,
-    position: 0,
-    edited_by: null,
-    edited_at: null,
-    created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
+  });
 }
 
 const mappings: FieldMappingRow[] = [

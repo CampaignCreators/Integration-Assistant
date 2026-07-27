@@ -1,28 +1,9 @@
-import type { RunRow } from "@cc/shared";
+
 import { describe, expect, it } from "vitest";
 import type { MappingsResult } from "../../llm/schemas.js";
+import { makeRun as run } from "../../test-support/fixtures.js";
 import { normalizeRows } from "./buildMappings.js";
 
-function run(overrides: Partial<RunRow> = {}): RunRow {
-  return {
-    id: "run-1",
-    user_id: "user-1",
-    title: null,
-    target_software: "Stripe",
-    direction: "target_to_hubspot",
-    frequency: "daily",
-    status: "generating",
-    recommended_approach: "custom",
-    confidence: "high",
-    approach_rationale: null,
-    approach_details_json: null,
-    mapping_meta_json: null,
-    error_message: null,
-    created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z",
-    ...overrides,
-  };
-}
 
 function result(rows: Partial<MappingsResult["rows"][number]>[]): MappingsResult {
   return {

@@ -1,5 +1,6 @@
 import type { ApproachDetails, Narrative, RunRow } from "@cc/shared";
 import { describe, expect, it } from "vitest";
+import { makeRun } from "../test-support/fixtures.js";
 import { existingDecision } from "./processRun.js";
 
 /**
@@ -26,11 +27,9 @@ const details: ApproachDetails = {
   narrative,
 };
 
-function run(overrides: Partial<RunRow> = {}): RunRow {
-  return {
-    id: "run-1",
-    user_id: "user-1",
-    title: null,
+
+const run = (overrides: Partial<RunRow> = {}) =>
+  makeRun({
     target_software: "ServiceTitan",
     direction: "target_to_hubspot",
     frequency: "daily",
@@ -40,12 +39,8 @@ function run(overrides: Partial<RunRow> = {}): RunRow {
     approach_rationale: narrative.rationale,
     approach_details_json: details,
     mapping_meta_json: { match_strategy: "Match on email.", gaps: [] },
-    error_message: null,
-    created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
-}
+  });
 
 describe("existingDecision", () => {
   it("rebuilds the decision and narrative from a completed run", () => {

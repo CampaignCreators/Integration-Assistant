@@ -30,6 +30,21 @@ export async function logEvent(
   }
 }
 
+/**
+ * Marks the run as still being worked on. A working run whose heartbeat goes
+ * quiet is treated as orphaned by `recovery.ts` and resumed elsewhere, so this
+ * has to be written at every step boundary.
+ */
+export async function heartbeat(runId: string): Promise<void> {
+  const { error } = await supabase
+    .from("runs")
+    .update({ heartbeat_at: new Date().toISOString() })
+    .eq("id", runId);
+  if (error) {
+    logger.warn({ err: error.message, runId }, "failed to write heartbeat");
+  }
+}
+
 export async function recordUsage(
   runId: string,
   step: string,
@@ -96,13 +111,16 @@ export async function runStep<T>(
     }
   }
 
-  await logEvent(ctx.runId, step, "started");
+  await Promise.all([logEvent(ctx.runId, step, "started"), heartbeat(ctx.runId)]);
 
   let lastError: unknown;
   for (let attempt = 1; attempt <= RETRYABLE_ATTEMPTS; attempt += 1) {
     try {
       const result = await handlers.execute();
-      await logEvent(ctx.runId, step, "succeeded");
+      await Promise.all([
+        logEvent(ctx.runId, step, "succeeded"),
+        heartbeat(ctx.runId),
+      ]);
       return result;
     } catch (err) {
       lastError = err;
@@ -115,12 +133,16 @@ export async function runStep<T>(
 
       if (!retryable || attempt === RETRYABLE_ATTEMPTS) break;
 
-      await logEvent(
-        ctx.runId,
-        step,
-        "progress",
-        `Attempt ${attempt} failed (${message}); retrying`
-      );
+      await Promise.all([
+        logEvent(
+          ctx.runId,
+          step,
+          "progress",
+          `Attempt ${attempt} failed (${message}); retrying`
+        ),
+        // A long backoff must not look like a dead worker.
+        heartbeat(ctx.runId),
+      ]);
       await sleep(BASE_BACKOFF_MS * 2 ** (attempt - 1));
     }
   }
