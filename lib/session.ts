@@ -1,15 +1,17 @@
 import type { MappingTable, Question, SourceDoc } from "./schemas";
 
 /**
- * The draft, held in the browser.
+ * The draft, as the browser holds it.
  *
- * There is no database on purpose: a single-user internal tool does not need one,
- * and the uploaded material often contains client PII that is better off never
- * being stored server-side. localStorage means a refresh or a closed laptop lid
- * doesn't lose an hour of work.
+ * localStorage is the only store when Supabase isn't configured, and a
+ * crash-safety net when it is — a reload never costs you the work in progress,
+ * whichever mode the app is in.
  */
 
 export interface Draft {
+  /** The saved run's id, when Supabase is configured. Null for a local draft. */
+  id: string | null;
+  title: string;
   targetSoftware: string;
   useCase: string;
   notes: string;
@@ -24,6 +26,8 @@ export interface Draft {
 }
 
 export const EMPTY_DRAFT: Draft = {
+  id: null,
+  title: "",
   targetSoftware: "",
   useCase: "",
   notes: "",

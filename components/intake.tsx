@@ -14,6 +14,8 @@ export function Intake({
   notes,
   documents,
   disabled,
+  runId,
+  onBeforeUpload,
   onChange,
 }: {
   targetSoftware: string;
@@ -21,6 +23,10 @@ export function Intake({
   notes: string;
   documents: SourceDoc[];
   disabled: boolean;
+  /** Set once the run is saved; the original files are filed against it. */
+  runId: string | null;
+  /** Creates the run if it does not exist yet, so uploads have somewhere to go. */
+  onBeforeUpload: () => Promise<string | null>;
   onChange: (patch: {
     targetSoftware?: string;
     useCase?: string;
@@ -40,11 +46,16 @@ export function Intake({
       return;
     }
 
-    const form = new FormData();
-    for (const file of Array.from(files).slice(0, room)) form.append("files", file);
-
     setUploading(true);
     setFailures([]);
+
+    // Saved runs keep the original file, so the run has to exist first.
+    const id = runId ?? (await onBeforeUpload());
+
+    const form = new FormData();
+    for (const file of Array.from(files).slice(0, room)) form.append("files", file);
+    if (id) form.append("run_id", id);
+
     try {
       const response = await fetch("/api/extract", { method: "POST", body: form });
       const data = (await response.json()) as {
@@ -114,7 +125,7 @@ export function Intake({
         <span className="text-sm font-medium text-slate-800">Supporting documents</span>
         <span className="mt-0.5 block text-xs text-slate-500">
           Optional. Call transcripts, notes, requirement docs ({ACCEPTED_EXTENSIONS.join(", ")}).
-          Text is read in the browser session and never stored on a server.
+          Only the text is used for the analysis.
         </span>
 
         <div className="mt-2 flex items-center gap-3">

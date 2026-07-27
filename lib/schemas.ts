@@ -96,6 +96,8 @@ export type AnalyzeResult =
 export const sourceDocSchema = z.object({
   name: z.string(),
   text: z.string(),
+  /** Where the original file was kept, when Supabase Storage is configured. */
+  storage_path: z.string().nullable().optional(),
 });
 
 export type SourceDoc = z.infer<typeof sourceDocSchema>;

@@ -12,25 +12,35 @@ documents from what you confirmed.
 
 ## Running it
 
-You need Node.js 20 or newer. Nothing else — no database, no Docker, no accounts.
+You need Node.js 20 or newer.
 
 ```bash
 npm install
+cp .env.example .env.local     # then add your Anthropic key
 npm run dev
 ```
 
 Open http://localhost:3000.
 
-Without an Anthropic API key it runs in **demo mode**: the flow works end to end,
-but the output is placeholder text and says so on every line. To get real
-analysis, put a key in `.env.local`:
+With no Anthropic key it runs in **demo mode**: the flow works end to end, but the
+output is placeholder text and says so on every line.
 
-```bash
-cp .env.example .env.local
-# then edit it: ANTHROPIC_API_KEY=sk-ant-...
-```
+## Supabase and Vercel
 
-Restart, and the demo banner disappears.
+Both are optional, and the app is the same either way:
+
+| | Without Supabase | With Supabase |
+| --- | --- | --- |
+| Sign-in | none | email + password |
+| Where work is kept | this browser only | your account, any browser |
+| Uploaded originals | discarded after reading | private storage |
+| Setup | none | paste one SQL file, add two env vars |
+
+There is **no local Supabase stack** — no Docker, no CLI, no migrations to run.
+Local development points at the same hosted project you deploy to Vercel against.
+
+Setting both up, start to finish: **[`docs/setup.md`](docs/setup.md)**. It takes
+about ten minutes, and `supabase/verify.sql` tells you whether it worked.
 
 ## How it works
 
@@ -54,18 +64,23 @@ could not be established, the row says `UNKNOWN`, the editor highlights it, and
 the handoff lists it under work still to do. Inventing a plausible field name
 costs a developer an afternoon.
 
-**Nothing is stored on a server.** Uploaded files are read, turned into text, and
-handed straight back to the browser; the draft lives in `localStorage`. Discovery
-material contains client PII, and the safest place for it is not on a server at
-all. The flip side: clearing your browser data clears your draft.
+**Your data is yours alone.** With Supabase configured, every run is scoped to its
+owner by row-level security, and uploads live in a private bucket keyed by user id
+— verified against a real Postgres, including that one user cannot read, edit,
+delete or forge ownership of another's. Without Supabase, nothing is stored
+server-side at all: files are read to text and handed back, and the draft lives in
+`localStorage`.
 
 ## Layout
 
 ```
-app/            page + three API routes (extract, analyze, documents)
+app/            page, login, and the API routes
 components/     the four steps of the UI
 lib/            schemas, prompts, the Claude call, mapping edits, .docx builders
+lib/supabase/   clients and the "is it configured" guard
+supabase/       schema.sql to paste in, verify.sql to check it
 samples/        fictional discovery material for trying it out
+docs/setup.md   Supabase + Vercel, step by step
 archive/        previous versions, kept for reference only
 ```
 
@@ -83,15 +98,12 @@ npm run build
 
 ## Deploying
 
-It is a standard Next.js app, so Vercel needs no configuration beyond
-`ANTHROPIC_API_KEY`.
+See [`docs/setup.md`](docs/setup.md). Two things that catch people out:
 
-One caveat worth knowing: a real analysis can run past a minute when web search
-is enabled, so the two Claude-backed routes declare `maxDuration = 300`. Vercel
-honours that on Pro; on Hobby, functions are capped at 60 seconds and a long
-analysis will be cut off. Either use Pro, or set `ENABLE_WEB_SEARCH=false` to keep
-runs short.
+**Vercel Hobby caps functions at 60 seconds.** A real analysis with web search can
+run longer, so the Claude-backed routes ask for `maxDuration = 300` — honoured on
+Pro. On Hobby, either upgrade or set `ENABLE_WEB_SEARCH=false`.
 
-Deploying without `ANTHROPIC_API_KEY` makes the API routes return 503 rather than
-serving demo output — a document that looks researched but is invented is the
-worst thing this tool could produce.
+**A deployment without `ANTHROPIC_API_KEY` returns 503** rather than serving demo
+output. A document that looks researched but is invented is the worst thing this
+tool could produce.
