@@ -3,6 +3,7 @@ import express from "express";
 import { config } from "./config.js";
 import { logger } from "./lib/logger.js";
 import { startPoller } from "./queue/poller.js";
+import { adminRouter } from "./routes/admin.js";
 import { deliverablesRouter } from "./routes/deliverables.js";
 import { mappingsRouter } from "./routes/mappings.js";
 import { runsRouter } from "./routes/runs.js";
@@ -18,6 +19,7 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "cc-integration-worker" });
 });
 
+app.use("/admin", adminRouter);
 app.use("/runs", runsRouter);
 app.use("/runs/:id", uploadsRouter);
 app.use("/runs/:id", signalsRouter);

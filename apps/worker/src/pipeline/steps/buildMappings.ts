@@ -89,6 +89,16 @@ export async function buildMappings(
     if (error) throw new Error(`Failed to save field mappings: ${error.message}`);
   }
 
+  // Persist the context the requirements document needs, so regenerating after
+  // a reviewer edit rebuilds the same document rather than losing these.
+  const { error: metaError } = await supabase
+    .from("runs")
+    .update({
+      mapping_meta_json: { match_strategy: data.match_strategy, gaps: data.gaps },
+    })
+    .eq("id", run.id);
+  if (metaError) throw new Error(`Failed to save mapping context: ${metaError.message}`);
+
   const { data: saved, error: readError } = await supabase
     .from("field_mappings")
     .select("*")

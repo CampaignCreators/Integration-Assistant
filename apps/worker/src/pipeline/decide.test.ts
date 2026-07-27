@@ -26,6 +26,7 @@ function run(overrides: Partial<RunRow> = {}): RunRow {
     confidence: null,
     approach_rationale: null,
     approach_details_json: null,
+    mapping_meta_json: null,
     error_message: null,
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",

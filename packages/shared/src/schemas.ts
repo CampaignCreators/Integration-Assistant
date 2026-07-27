@@ -62,6 +62,46 @@ export const intakeSchema = z.object({
 });
 export type IntakeInput = z.infer<typeof intakeSchema>;
 
+/**
+ * Body for PATCH /runs/:id/mappings — the complete desired table.
+ *
+ * Sending the whole list makes the edit idempotent: rows carrying an `id` are
+ * updated, rows without one are inserted, and anything missing is removed.
+ * Array order becomes the display order.
+ */
+export const mappingRowInputSchema = z.object({
+  id: z.string().uuid().optional(),
+  source_obj: z.string().trim().min(1).max(200),
+  source_field: z.string().trim().min(1).max(200),
+  target_obj: z.string().trim().min(1).max(200),
+  target_field: z.string().trim().min(1).max(200),
+  direction: z.enum(["one_way", "two_way"]),
+  transform: z.string().trim().max(1000).nullable(),
+  required: z.boolean(),
+  match_key: z.boolean(),
+  notes: z.string().trim().max(2000).nullable(),
+});
+export type MappingRowInput = z.infer<typeof mappingRowInputSchema>;
+
+export const MAX_MAPPING_ROWS = 500;
+
+export const updateMappingsSchema = z.object({
+  rows: z.array(mappingRowInputSchema).max(MAX_MAPPING_ROWS),
+  match_strategy: z.string().trim().max(4000).optional(),
+  gaps: z.array(z.string().trim().max(1000)).max(100).optional(),
+});
+export type UpdateMappingsInput = z.infer<typeof updateMappingsSchema>;
+
+/** Body for PATCH /admin/users/:id — role changes. */
+export const updateUserRoleSchema = z.object({
+  role: z.enum(["rep", "reviewer", "admin"]),
+});
+
+/** Body for PATCH /admin/settings. */
+export const updateSettingsSchema = z.object({
+  max_concurrent_runs: z.number().int().min(1).max(20),
+});
+
 /** Fields that must be present before a run can be submitted. */
 export function validateSubmittable(input: {
   target_software: string | null;

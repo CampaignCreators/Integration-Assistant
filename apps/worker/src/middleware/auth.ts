@@ -53,3 +53,16 @@ export async function requireAuth(
 export function isElevated(user: AuthedUser): boolean {
   return user.role === "reviewer" || user.role === "admin";
 }
+
+/** Gate for the admin surface: user management, settings, org-wide usage. */
+export function requireAdmin(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  if (req.user?.role !== "admin") {
+    res.status(403).json({ error: "Admin access required" });
+    return;
+  }
+  next();
+}

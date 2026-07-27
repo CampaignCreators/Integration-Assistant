@@ -14,6 +14,13 @@ export default async function AppLayout({
     redirect("/login");
   }
 
+  // RLS lets a user read their own row, so this needs no elevated access.
+  const { data: profile } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+
   return (
     <div className="min-h-screen">
       <header className="border-b border-slate-200 bg-white">
@@ -22,6 +29,11 @@ export default async function AppLayout({
             CC Integration App
           </Link>
           <div className="flex items-center gap-4 text-sm text-slate-600">
+            {profile?.role === "admin" ? (
+              <Link href="/admin" className="hover:text-slate-900 hover:underline">
+                Admin
+              </Link>
+            ) : null}
             <span>{user.email}</span>
             <form action={signOut}>
               <button

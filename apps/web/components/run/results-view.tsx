@@ -4,22 +4,14 @@ import {
   type FieldMappingRow,
   type RunRow,
 } from "@cc/shared";
+import { MappingEditor } from "./mapping-editor";
+import { ReprocessButton } from "./reprocess-button";
 
 const CONFIDENCE_STYLES: Record<string, string> = {
   high: "bg-emerald-50 text-emerald-800 border-emerald-200",
   medium: "bg-amber-50 text-amber-800 border-amber-200",
   low: "bg-red-50 text-red-800 border-red-200",
 };
-
-/** A mapping row a reviewer still needs to resolve. */
-function needsAttention(row: FieldMappingRow): boolean {
-  const unknown = /\bunknown\b/i;
-  return (
-    unknown.test(row.source_field) ||
-    unknown.test(row.target_field) ||
-    (row.notes !== null && /\b(unknown|gap|uncertain|custom property)\b/i.test(row.notes))
-  );
-}
 
 /**
  * The results screen (spec §9): the recommendation with its reasoning, the
@@ -37,7 +29,6 @@ export function ResultsView({
   const details = run.approach_details_json;
   const hasDoc = deliverables.some((d) => d.kind === "requirements_doc");
   const hasSheet = deliverables.some((d) => d.kind === "mapping_sheet");
-  const attention = mappings.filter(needsAttention).length;
 
   return (
     <div className="mt-8 space-y-6">
@@ -111,73 +102,17 @@ export function ResultsView({
             available={hasSheet}
           />
         </div>
+        <div className="mt-5 border-t border-slate-200 pt-4">
+          <ReprocessButton runId={run.id} />
+        </div>
       </section>
 
       {mappings.length > 0 ? (
-        <section className="rounded-xl border border-slate-200 bg-white">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 p-5">
-            <div>
-              <h2 className="text-lg font-semibold">Field mapping</h2>
-              <p className="mt-1 text-sm text-slate-600">
-                {mappings.length} field{mappings.length === 1 ? "" : "s"}
-                {attention > 0
-                  ? ` · ${attention} highlighted for a human decision`
-                  : ""}
-              </p>
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="px-4 py-3">From</th>
-                  <th className="px-4 py-3">To</th>
-                  <th className="px-4 py-3">Direction</th>
-                  <th className="px-4 py-3">Change needed</th>
-                  <th className="px-4 py-3">Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {mappings.map((row) => (
-                  <tr
-                    key={row.id}
-                    className={`border-b border-slate-100 align-top last:border-0 ${
-                      needsAttention(row) ? "bg-amber-50" : ""
-                    }`}
-                  >
-                    <td className="px-4 py-3">
-                      <span className="block text-xs text-slate-500">
-                        {row.source_obj}
-                      </span>
-                      <span className="font-medium">{row.source_field}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="block text-xs text-slate-500">
-                        {row.target_obj}
-                      </span>
-                      <span className="font-medium">{row.target_field}</span>
-                      {row.required ? (
-                        <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600">
-                          required
-                        </span>
-                      ) : null}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {row.direction === "two_way" ? "Two-way" : "One-way"}
-                      {row.match_key ? (
-                        <span className="mt-1 block text-xs font-medium text-blue-700">
-                          matches records
-                        </span>
-                      ) : null}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">{row.transform ?? "—"}</td>
-                    <td className="px-4 py-3 text-slate-600">{row.notes ?? ""}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
+        <MappingEditor
+          runId={run.id}
+          initialMappings={mappings}
+          initialMeta={run.mapping_meta_json}
+        />
       ) : null}
 
       {details?.narrative ? (

@@ -4,6 +4,8 @@ import { logger } from "../lib/logger.js";
 import { supabase } from "../lib/supabase.js";
 import { requireAuth } from "../middleware/auth.js";
 import { runResearchPhase } from "../pipeline/processRun.js";
+import { regenerateDeliverables } from "../pipeline/regenerate.js";
+import { PermanentStepError } from "../pipeline/runner.js";
 import { loadRunChecked } from "./runs.js";
 
 export const signalsRouter = Router({ mergeParams: true });
@@ -118,6 +120,85 @@ signalsRouter.get("/findings", async (req, res) => {
     return;
   }
   res.json({ findings: data });
+});
+
+/**
+ * POST /runs/:id/generate — rebuild the deliverables from current data.
+ *
+ * Used after a reviewer edits the mapping table. Does not re-run the mapping
+ * builder, so corrections survive.
+ */
+signalsRouter.post("/generate", async (req, res) => {
+  const run = await loadRunChecked(req, res);
+  if (!run) return;
+  if (run.status !== "complete") {
+    res.status(409).json({
+      error: "Documents can only be rebuilt once a run has finished",
+    });
+    return;
+  }
+
+  try {
+    await regenerateDeliverables(run.id);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Could not rebuild documents";
+    logger.error({ err: message, runId: run.id }, "regenerate failed");
+    res.status(err instanceof PermanentStepError ? 409 : 500).json({ error: message });
+    return;
+  }
+
+  res.json({ ok: true });
+});
+
+/**
+ * POST /runs/:id/reprocess — run the research pipeline again, reusing the
+ * uploads and brief already captured (spec §7).
+ *
+ * Clears the previous findings and recommendation so steps genuinely re-run
+ * rather than skipping themselves as already-done.
+ */
+signalsRouter.post("/reprocess", async (req, res) => {
+  const run = await loadRunChecked(req, res);
+  if (!run) return;
+  if (run.status !== "complete" && run.status !== "failed") {
+    res.status(409).json({ error: "This run is still in progress" });
+    return;
+  }
+
+  const [findings, mappings, runReset] = await Promise.all([
+    supabase.from("research_findings").delete().eq("run_id", run.id),
+    supabase.from("field_mappings").delete().eq("run_id", run.id),
+    supabase
+      .from("runs")
+      .update({
+        recommended_approach: null,
+        confidence: null,
+        approach_rationale: null,
+        approach_details_json: null,
+        mapping_meta_json: null,
+        error_message: null,
+        status: "researching",
+      })
+      .eq("id", run.id),
+  ]);
+  const failure = findings.error ?? mappings.error ?? runReset.error;
+  if (failure) {
+    res.status(500).json({ error: failure.message });
+    return;
+  }
+
+  await supabase.from("run_events").insert({
+    run_id: run.id,
+    step: "pipeline",
+    status: "started",
+    message: "Re-running research on the existing files and answers",
+  });
+
+  void runResearchPhase(run.id).catch((err) => {
+    logger.error({ err, runId: run.id }, "reprocess crashed");
+  });
+
+  res.json({ ok: true });
 });
 
 // GET /runs/:id/events — pipeline progress log.

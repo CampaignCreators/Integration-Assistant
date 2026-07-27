@@ -126,6 +126,7 @@ export interface RunRow {
   confidence: ConfidenceLevel | null;
   approach_rationale: string | null;
   approach_details_json: ApproachDetails | null;
+  mapping_meta_json: MappingMeta | null;
   error_message: string | null;
   created_at: string;
   updated_at: string;
@@ -207,6 +208,31 @@ export interface ResearchFindingRow {
   updated_at: string;
 }
 
+/** Mapping context the requirements document needs when regenerating. */
+export interface MappingMeta {
+  match_strategy: string;
+  gaps: string[];
+}
+
+export interface AppSettingsRow {
+  id: boolean;
+  max_concurrent_runs: number;
+  updated_at: string;
+}
+
+export interface RunCostSummaryRow {
+  run_id: string;
+  user_id: string;
+  target_software: string | null;
+  status: RunStatus;
+  recommended_approach: Approach | null;
+  created_at: string;
+  cost_usd: string;
+  input_tokens: number;
+  output_tokens: number;
+  llm_calls: number;
+}
+
 export interface FieldMappingRow {
   id: string;
   run_id: string;
@@ -220,6 +246,8 @@ export interface FieldMappingRow {
   match_key: boolean;
   notes: string | null;
   position: number;
+  edited_by: string | null;
+  edited_at: string | null;
   created_at: string;
   updated_at: string;
 }

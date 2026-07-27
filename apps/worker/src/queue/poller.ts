@@ -1,6 +1,7 @@
 import type { RunRow } from "@cc/shared";
 import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
+import { maxConcurrentRuns } from "../lib/settings.js";
 import { supabase } from "../lib/supabase.js";
 import { runExtractionPhase } from "../pipeline/processRun.js";
 
@@ -22,7 +23,8 @@ export function startPoller(): void {
 
     let claimed = false;
     try {
-      if (inFlight < config.maxConcurrentRuns) {
+      const cap = await maxConcurrentRuns();
+      if (inFlight < cap) {
         const { data, error } = await supabase.rpc("claim_next_run");
         if (error) {
           logger.error({ err: error.message }, "claim_next_run failed");
