@@ -29,6 +29,21 @@ import {
 
 const CELL_MARGIN = { top: 60, bottom: 60, left: 100, right: 100 };
 
+/**
+ * Campaign Creators colours, matching the app and campaigncreators.com. These
+ * documents go to clients, so they carry the brand rather than Word's defaults.
+ */
+const BRAND = {
+  navy: "0E3860",
+  navyDark: "0C2237",
+  ink: "39464E",
+  muted: "697783",
+  tableHeader: "E2E7EC",
+  flagFill: "FFEBE7",
+  flagText: "CC4A2A",
+  alert: "C84D42",
+} as const;
+
 export interface BuildInput {
   kind: DocumentKind;
   targetSoftware: string;
@@ -47,6 +62,15 @@ export async function buildDocument(input: BuildInput): Promise<Buffer> {
 
   const document = new Document({
     creator: "Integration Assistant",
+    styles: {
+      default: {
+        // Word defaults headings to a blue that is not ours.
+        title: { run: { color: BRAND.navy, size: 56, bold: true } },
+        heading1: { run: { color: BRAND.navy, size: 30, bold: true } },
+        heading2: { run: { color: BRAND.navyDark, size: 24, bold: true } },
+        document: { run: { color: BRAND.ink, size: 22 } },
+      },
+    },
     title: `${input.narrative.integration_title} — ${
       input.kind === "brief" ? "Integration Brief" : "Developer Handoff"
     }`,
@@ -223,7 +247,7 @@ function title(text: string): Paragraph {
 
 function subtitle(text: string): Paragraph {
   return new Paragraph({
-    children: [new TextRun({ text, color: "666666", size: 26 })],
+    children: [new TextRun({ text, color: BRAND.muted, size: 26 })],
     spacing: { after: 200 },
   });
 }
@@ -263,7 +287,7 @@ function metaLine(input: BuildInput): Paragraph {
     children: [
       new TextRun({
         text: `${input.targetSoftware} ↔ HubSpot · generated ${date}`,
-        color: "888888",
+        color: BRAND.muted,
         size: 20,
       }),
     ],
@@ -281,7 +305,7 @@ function demoBanner(input: BuildInput): Paragraph[] {
             "DEMO OUTPUT — this document was generated without an Anthropic API key. " +
             "Every finding in it is placeholder text. Do not send it to a client.",
           bold: true,
-          color: "B00020",
+          color: BRAND.alert,
         }),
       ],
       spacing: { after: 240 },
@@ -347,8 +371,12 @@ function headerRow(labels: string[]): TableRow {
       (label) =>
         new TableCell({
           margins: CELL_MARGIN,
-          shading: { fill: "F1F5F9" },
-          children: [new Paragraph({ children: [new TextRun({ text: label, bold: true })] })],
+          shading: { fill: BRAND.tableHeader },
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: label, bold: true, color: BRAND.navy })],
+            }),
+          ],
         })
     ),
   });
@@ -357,10 +385,10 @@ function headerRow(labels: string[]): TableRow {
 function cell(text: string, flag = false): TableCell {
   return new TableCell({
     margins: CELL_MARGIN,
-    shading: flag ? { fill: "FFF4E5" } : undefined,
+    shading: flag ? { fill: BRAND.flagFill } : undefined,
     children: [
       new Paragraph({
-        children: [new TextRun({ text: text || "—", color: flag ? "B45309" : undefined })],
+        children: [new TextRun({ text: text || "—", color: flag ? BRAND.flagText : BRAND.ink })],
       }),
     ],
   });

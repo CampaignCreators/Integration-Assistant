@@ -87,6 +87,20 @@ archive/        previous versions, kept for reference only
 `lib/` holds the logic worth testing and `components/` holds only presentation,
 which is why the test suite needs no browser.
 
+## Look and feel
+
+The palette is Campaign Creators', taken from campaigncreators.com and defined once
+in [`app/globals.css`](app/globals.css) — navy `#0e3860` carries the interface,
+mint `#35ffd8` marks completed steps, and the site's coral and orange handle errors
+and warnings. The generated documents use the same colours, since they go to
+clients.
+
+Some hues are accents rather than text colours: bright blue on white measures
+3.6:1 and coral 3.0:1, both under the 4.5:1 needed for body text. The `-ink`
+variants in that file are the least-darkened versions of those same hues that
+clear 4.5:1, so brand and legibility both hold. Change a value there and it
+applies everywhere.
+
 ## Checks
 
 ```bash

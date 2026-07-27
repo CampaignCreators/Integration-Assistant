@@ -137,6 +137,46 @@ describe("buildDocument", () => {
   });
 });
 
+describe("brand styling", () => {
+  /** Reads the raw XML, since colours live in attributes rather than in text. */
+  async function xmlOf(buffer: Buffer): Promise<string> {
+    const JSZip = (await import("jszip")).default;
+    const zip = await JSZip.loadAsync(buffer);
+    const parts = await Promise.all(
+      Object.keys(zip.files)
+        .filter((name) => name.endsWith(".xml"))
+        .map((name) => zip.files[name]!.async("string"))
+    );
+    return parts.join("\n");
+  }
+
+  it("styles headings and body in Campaign Creators navy and ink", async () => {
+    // docx accepts a styles object and can silently ignore parts of it, so this
+    // asserts the colours reached the file rather than just the config.
+    const xml = await xmlOf(await buildDocument(input({ kind: "handoff" })));
+    expect(xml).toContain("0E3860"); // navy — titles and headings
+    expect(xml).toContain("39464E"); // ink — body text
+  });
+
+  it("shades table headers with the brand tint, not Word's default", async () => {
+    const xml = await xmlOf(await buildDocument(input({ kind: "handoff" })));
+    expect(xml).toContain("E2E7EC");
+    expect(xml).not.toContain("F1F5F9");
+  });
+
+  it("flags unresolved fields in the brand's warm accent", async () => {
+    const xml = await xmlOf(await buildDocument(input({ kind: "handoff" })));
+    expect(xml).toContain("FFEBE7"); // fill
+    expect(xml).toContain("CC4A2A"); // text
+  });
+
+  it("uses the brand alert colour for the demo warning", async () => {
+    const xml = await xmlOf(await buildDocument(input({ demo: true })));
+    expect(xml).toContain("C84D42");
+    expect(xml).not.toContain("B00020");
+  });
+});
+
 describe("documentFilename", () => {
   it("builds a tidy filename from the software name", () => {
     expect(documentFilename("brief", "ServiceTitan")).toBe("servicetitan-integration-brief.docx");

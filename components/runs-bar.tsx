@@ -33,11 +33,11 @@ export function RunsBar({
   const current = runs.find((run) => run.id === currentId) ?? null;
 
   return (
-    <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm">
+    <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-white px-4 py-3 text-sm shadow-sm">
       <label className="flex items-center gap-2">
-        <span className="text-slate-600">Run</span>
+        <span className="text-muted">Run</span>
         <select
-          className="max-w-xs rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
+          className="max-w-xs rounded-lg border border-line px-2 py-1.5 text-sm text-ink"
           value={currentId ?? ""}
           disabled={busy}
           onChange={(event) => {
@@ -72,7 +72,7 @@ export function RunsBar({
         </Button>
       ) : null}
 
-      <span className="ml-auto flex items-center gap-4 text-xs text-slate-500">
+      <span className="ml-auto flex items-center gap-4 text-xs text-muted">
         <SaveState state={saveState} />
         {email ? <span>{email}</span> : null}
         <Button variant="ghost" onClick={onSignOut}>
@@ -85,7 +85,7 @@ export function RunsBar({
 
 function SaveState({ state }: { state: "idle" | "saving" | "saved" | "error" }) {
   if (state === "saving") return <span>Saving…</span>;
-  if (state === "saved") return <span className="text-emerald-700">Saved</span>;
-  if (state === "error") return <span className="text-red-700">Not saved</span>;
+  if (state === "saved") return <span className="text-teal-ink">Saved</span>;
+  if (state === "error") return <span className="text-coral-ink">Not saved</span>;
   return null;
 }

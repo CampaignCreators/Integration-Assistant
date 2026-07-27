@@ -211,7 +211,7 @@ export function Workspace({
     <main className="mx-auto max-w-5xl px-6 py-10">
       <header className="mb-6">
         <h1 className="text-2xl font-semibold">Integration Assistant</h1>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-ink">
           Turn discovery material into a HubSpot data mapping, an integration brief, and a
           developer handoff.
         </p>
@@ -270,7 +270,7 @@ export function Workspace({
               <Spinner label="Reading everything and drafting the mapping — this can take a minute…" />
             ) : null}
             {!canAnalyze(draft) ? (
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-muted">
                 Name the software and describe the use case to continue.
               </span>
             ) : null}
@@ -327,7 +327,7 @@ export function Workspace({
         ) : null}
       </div>
 
-      <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-5 text-xs text-slate-500">
+      <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5 text-xs text-muted">
         <span>
           {persistence
             ? "Runs are saved to Supabase against your account. Uploaded files are kept in private storage."

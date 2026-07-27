@@ -1,9 +1,68 @@
 @import "tailwindcss";
 
+/**
+ * Campaign Creators palette.
+ *
+ * The first group is taken from campaigncreators.com as-is. The `-ink` variants
+ * are darkened versions of those same hues, added because the originals are
+ * accent colours: bright blue on white measures 3.6:1 and coral 3.0:1, both below
+ * the 4.5:1 needed for body text. Each -ink value is the least darkening that
+ * clears 4.5:1, so the hue stays the brand's and the text stays readable.
+ *
+ * Navy carries the interface — it is what the site leans on, and white on navy is
+ * 12:1. Mint is used as a pale background behind navy text (9.4:1) rather than as
+ * a fill behind white text, which it is far too light for.
+ */
+@theme {
+  /* Straight from the site */
+  --color-navy: #0e3860;
+  --color-navy-dark: #0c2237;
+  --color-blue: #1084ff;
+  --color-mint: #35ffd8;
+  --color-teal: #42d9b8;
+  --color-ink: #39464e; /* the site's --midnight */
+  --color-ink-deep: #25343d; /* the site's --blur_black */
+  --color-shell: #f5f8fa;
+  --color-line: #ced4da;
+  --color-coral: #fd6154;
+  --color-ember: #ff5c35; /* the site's --portland-orange */
+
+  /* Darkened for text, so brand hues stay legible at small sizes */
+  --color-blue-ink: #0e74e0;
+  --color-muted: #697783;
+  --color-teal-ink: #198290;
+  --color-coral-ink: #c84d42;
+  --color-ember-ink: #cc4a2a;
+
+  /* Tints, for panel and notice backgrounds */
+  --color-navy-tint: #e2e7ec;
+  --color-mint-tint: #e7fffa;
+  --color-coral-tint: #ffecea;
+  --color-ember-tint: #ffebe7;
+}
+
 :root {
   color-scheme: light;
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply bg-shell text-ink antialiased;
+}
+
+/* Native controls default to the browser's blue; these are ours. */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--color-navy);
+}
+
+::selection {
+  background: var(--color-mint);
+  color: var(--color-navy);
+}
+
+/* Headings carry the brand navy rather than near-black. */
+h1,
+h2,
+h3 {
+  @apply text-navy;
 }

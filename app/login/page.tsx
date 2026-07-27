@@ -16,48 +16,48 @@ export default async function LoginPage({
 
   return (
     <main className="flex min-h-screen items-center justify-center p-6">
-      <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+      <div className="w-full max-w-sm rounded-xl border border-line bg-white p-8 shadow-sm">
         <h1 className="text-xl font-semibold">Integration Assistant</h1>
-        <p className="mt-1 text-sm text-slate-600">Sign in to your saved runs.</p>
+        <p className="mt-1 text-sm text-ink">Sign in to your saved runs.</p>
 
         <form action={signIn} className="mt-6 space-y-4">
           {error ? (
-            <div className="rounded-lg bg-red-50 p-3 text-sm text-red-800" role="alert">
+            <div className="rounded-lg bg-coral-tint p-3 text-sm text-coral-ink" role="alert">
               {decodeURIComponent(error)}
             </div>
           ) : null}
 
           <label className="block">
-            <span className="text-sm font-medium text-slate-800">Email</span>
+            <span className="text-sm font-medium text-navy">Email</span>
             <input
               type="email"
               name="email"
               required
               autoComplete="email"
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-sm text-ink focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue"
             />
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium text-slate-800">Password</span>
+            <span className="text-sm font-medium text-navy">Password</span>
             <input
               type="password"
               name="password"
               required
               autoComplete="current-password"
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-sm text-ink focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue"
             />
           </label>
 
           <button
             type="submit"
-            className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className="w-full rounded-lg bg-navy px-4 py-2 text-sm font-medium text-white transition hover:bg-navy-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2"
           >
             Sign in
           </button>
         </form>
 
-        <p className="mt-5 text-xs text-slate-500">
+        <p className="mt-5 text-xs text-muted">
           Accounts are created in the Supabase dashboard under Authentication → Users.
         </p>
       </div>

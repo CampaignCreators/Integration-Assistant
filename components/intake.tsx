@@ -122,8 +122,8 @@ export function Intake({
       </Field>
 
       <div>
-        <span className="text-sm font-medium text-slate-800">Supporting documents</span>
-        <span className="mt-0.5 block text-xs text-slate-500">
+        <span className="text-sm font-medium text-navy">Supporting documents</span>
+        <span className="mt-0.5 block text-xs text-muted">
           Optional. Call transcripts, notes, requirement docs ({ACCEPTED_EXTENSIONS.join(", ")}).
           Only the text is used for the analysis.
         </span>
@@ -136,7 +136,7 @@ export function Intake({
             disabled={disabled || uploading}
             accept={ACCEPTED_EXTENSIONS.join(",")}
             onChange={(event) => void upload(event.target.files)}
-            className="block w-full cursor-pointer rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-1.5 file:text-sm file:text-white"
+            className="block w-full cursor-pointer rounded-lg border border-dashed border-line bg-shell p-3 text-sm text-ink file:mr-3 file:rounded-md file:border-0 file:bg-navy file:px-3 file:py-1.5 file:text-sm file:text-white hover:file:bg-navy-dark"
           />
           {uploading ? <Spinner label="Reading…" /> : null}
         </div>
@@ -146,11 +146,11 @@ export function Intake({
             {documents.map((doc) => (
               <li
                 key={doc.name}
-                className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-sm"
+                className="flex items-center justify-between gap-3 rounded-lg bg-shell px-3 py-2 text-sm"
               >
                 <span className="truncate">
                   {doc.name}{" "}
-                  <span className="text-slate-500">
+                  <span className="text-muted">
                     · {doc.text.length.toLocaleString()} characters read
                   </span>
                 </span>

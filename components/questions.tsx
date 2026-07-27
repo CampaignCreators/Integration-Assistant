@@ -30,9 +30,9 @@ export function Questions({
       <Notice tone="warn">{reason}</Notice>
 
       {questions.map((question, index) => (
-        <div key={question.question} className="rounded-lg border border-slate-200 p-4">
-          <p className="text-sm font-medium text-slate-900">{question.question}</p>
-          <p className="mt-1 text-xs text-slate-500">{question.why}</p>
+        <div key={question.question} className="rounded-lg border border-line p-4">
+          <p className="text-sm font-medium text-navy">{question.question}</p>
+          <p className="mt-1 text-xs text-muted">{question.why}</p>
 
           {question.suggestions.length > 0 ? (
             <div className="mt-3 flex flex-wrap gap-2">
@@ -52,8 +52,8 @@ export function Questions({
                     }
                     className={`rounded-full border px-3 py-1 text-xs transition ${
                       selected
-                        ? "border-blue-600 bg-blue-600 text-white"
-                        : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                        ? "border-navy bg-navy text-white"
+                        : "border-line bg-white text-ink hover:bg-shell"
                     }`}
                   >
                     {suggestion}
@@ -95,7 +95,7 @@ export function Questions({
         </Button>
         {busy ? <Spinner label="Drafting the mapping…" /> : null}
         {!busy && answered < questions.length ? (
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-muted">
             Anything you leave blank becomes a recorded assumption.
           </span>
         ) : null}

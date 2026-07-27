@@ -48,12 +48,12 @@ export function MappingTableEditor({
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-slate-700">{mapping.summary}</p>
+      <p className="text-sm text-ink">{mapping.summary}</p>
 
       {groups.map((group, objectIndex) => (
         <div key={`${group.plan.hubspot_object}-${group.plan.external_object}`}>
           <div className="flex flex-wrap items-end justify-between gap-3">
-            <h3 className="text-sm font-semibold text-slate-900">{group.label}</h3>
+            <h3 className="text-sm font-semibold text-navy">{group.label}</h3>
             {!readOnly ? (
               <Button
                 variant="ghost"
@@ -63,13 +63,13 @@ export function MappingTableEditor({
               </Button>
             ) : null}
           </div>
-          <p className="mt-1 text-xs text-slate-500">{group.plan.purpose}</p>
+          <p className="mt-1 text-xs text-muted">{group.plan.purpose}</p>
 
-          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-600">
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted">
             <label className="flex items-center gap-1.5">
               Match on
               <input
-                className="rounded border border-slate-300 px-2 py-1 text-xs"
+                className="rounded border border-line px-2 py-1 text-xs text-ink"
                 value={group.plan.match_key}
                 readOnly={readOnly}
                 onChange={(event) =>
@@ -80,7 +80,7 @@ export function MappingTableEditor({
             <label className="flex items-center gap-1.5">
               Direction
               <select
-                className="rounded border border-slate-300 px-2 py-1 text-xs"
+                className="rounded border border-line px-2 py-1 text-xs text-ink"
                 value={group.plan.direction}
                 disabled={readOnly}
                 onChange={(event) =>
@@ -100,10 +100,10 @@ export function MappingTableEditor({
             </label>
           </div>
 
-          <div className="mt-3 overflow-x-auto rounded-lg border border-slate-200">
-            <table className="w-full min-w-4xl border-collapse text-sm">
+          <div className="mt-3 overflow-x-auto rounded-lg border border-line">
+            <table className="w-full min-w-[68rem] border-collapse text-sm">
               <thead>
-                <tr className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                <tr className="bg-navy-tint text-left text-xs uppercase tracking-wide text-navy">
                   <Th>{group.plan.external_object} field</Th>
                   <Th>HubSpot property</Th>
                   <Th>Direction</Th>
@@ -116,7 +116,7 @@ export function MappingTableEditor({
               </thead>
               <tbody>
                 {group.rows.map(({ row, index }) => (
-                  <tr key={index} className="border-t border-slate-100 align-top">
+                  <tr key={index} className="border-t border-line/60 align-top">
                     <Td>
                       <input
                         className={cellClass(isUnknown(row.external_field))}
@@ -210,7 +210,7 @@ export function MappingTableEditor({
                         <button
                           type="button"
                           aria-label="Remove row"
-                          className="text-slate-400 hover:text-red-600"
+                          className="text-muted hover:text-coral-ink"
                           onClick={() => onChange(removeRow(mapping, index))}
                         >
                           ×
@@ -221,7 +221,7 @@ export function MappingTableEditor({
                 ))}
                 {group.rows.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-3 py-3 text-sm text-slate-500">
+                    <td colSpan={8} className="px-3 py-3 text-sm text-muted">
                       No fields mapped for this object yet.
                     </td>
                   </tr>
@@ -244,8 +244,8 @@ export function MappingTableEditor({
 
       {stranded.length > 0 ? (
         <div>
-          <h3 className="text-sm font-semibold text-slate-900">Rows without an object</h3>
-          <ul className="mt-2 space-y-1 text-sm text-slate-600">
+          <h3 className="text-sm font-semibold text-navy">Rows without an object</h3>
+          <ul className="mt-2 space-y-1 text-sm text-ink">
             {stranded.map(({ row, index }) => (
               <li key={index} className="flex items-center justify-between gap-3">
                 <span>
@@ -301,7 +301,7 @@ export function MappingTableEditor({
           <Button onClick={onConfirm} disabled={busy || mapping.rows.length === 0}>
             Confirm table logic
           </Button>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-muted">
             Confirming unlocks the brief and the developer handoff.
           </span>
         </div>
@@ -324,16 +324,16 @@ function EditableList({
   if (items.length === 0) return null;
   return (
     <div>
-      <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+      <h3 className="text-sm font-semibold text-navy">{title}</h3>
       <ul className="mt-2 space-y-1.5">
         {items.map((item, index) => (
-          <li key={index} className="flex items-start justify-between gap-3 text-sm text-slate-700">
+          <li key={index} className="flex items-start justify-between gap-3 text-sm text-ink">
             <span>• {item}</span>
             {!readOnly ? (
               <button
                 type="button"
                 aria-label={`Remove from ${title}`}
-                className="shrink-0 text-slate-400 hover:text-red-600"
+                className="shrink-0 text-muted hover:text-coral-ink"
                 onClick={() => onRemove(index)}
               >
                 ×
@@ -361,7 +361,7 @@ function Td({
 }
 
 function cellClass(flag = false): string {
-  return `w-full rounded border px-2 py-1 text-sm ${
-    flag ? "border-amber-400 bg-amber-50 text-amber-900" : "border-transparent bg-transparent"
-  } read-only:cursor-default focus:border-blue-500 focus:bg-white focus:outline-none`;
+  return `w-full rounded border px-2 py-1 text-sm text-ink ${
+    flag ? "border-ember bg-ember-tint text-ember-ink" : "border-transparent bg-transparent"
+  } read-only:cursor-default focus:border-blue focus:bg-white focus:outline-none`;
 }

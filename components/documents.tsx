@@ -41,11 +41,11 @@ export function Documents({
       {DOCUMENTS.map((document) => (
         <div
           key={document.kind}
-          className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-slate-200 p-4"
+          className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-line p-4"
         >
           <div className="min-w-0">
-            <p className="text-sm font-medium text-slate-900">{document.title}</p>
-            <p className="mt-0.5 text-xs text-slate-500">{document.description}</p>
+            <p className="text-sm font-medium text-navy">{document.title}</p>
+            <p className="mt-0.5 text-xs text-muted">{document.description}</p>
           </div>
           <div className="flex items-center gap-3">
             {busy === document.kind ? <Spinner label="Writing…" /> : null}
@@ -62,7 +62,7 @@ export function Documents({
 
       {error ? <Notice tone="error">{error}</Notice> : null}
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         Each download is written from the table you confirmed, so edits you made are
         reflected. Generating a document takes a few seconds.
       </p>
