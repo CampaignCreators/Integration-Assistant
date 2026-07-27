@@ -11,6 +11,7 @@
     "start": "node dist/index.cjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.115.0",
     "@cc/shared": "*",
     "@supabase/supabase-js": "^2.50.0",
     "cors": "^2.8.5",

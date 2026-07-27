@@ -4,6 +4,7 @@ import { config } from "./config.js";
 import { logger } from "./lib/logger.js";
 import { startPoller } from "./queue/poller.js";
 import { runsRouter } from "./routes/runs.js";
+import { signalsRouter } from "./routes/signals.js";
 import { uploadsRouter } from "./routes/uploads.js";
 
 const app = express();
@@ -17,6 +18,7 @@ app.get("/health", (_req, res) => {
 
 app.use("/runs", runsRouter);
 app.use("/runs/:id", uploadsRouter);
+app.use("/runs/:id", signalsRouter);
 
 app.use(
   (err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

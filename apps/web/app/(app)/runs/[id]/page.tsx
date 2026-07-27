@@ -1,9 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { RunDetail } from "@cc/shared";
+import type {
+  ExtractedSignalRow,
+  ResearchFindingRow,
+  RunDetail,
+  RunEventRow,
+} from "@cc/shared";
 import { workerFetch, WorkerApiError } from "@/lib/worker-api";
 import { StatusBadge } from "@/components/status-badge";
 import { IntakeWizard } from "@/components/intake/wizard";
+import { FindingsView } from "@/components/run/findings-view";
+import { ProcessingView } from "@/components/run/processing-view";
+import { SignalConfirmation } from "@/components/run/signal-confirmation";
 import {
   DIRECTION_LABELS,
   FREQUENCY_LABELS,
@@ -45,6 +53,7 @@ export default async function RunPage({
 
       {run.error_message ? (
         <div className="mt-4 rounded-lg bg-red-50 p-4 text-sm text-red-800" role="alert">
+          <strong className="font-semibold">This run stopped: </strong>
           {run.error_message}
         </div>
       ) : null}
@@ -54,13 +63,49 @@ export default async function RunPage({
           <IntakeWizard run={run} brief={brief} uploads={uploads} />
         </div>
       ) : (
-        <SubmittedRunView detail={detail} />
+        <>
+          <BriefSummary detail={detail} />
+          {run.status === "awaiting_confirmation" ? (
+            <div className="mt-8">
+              <SignalConfirmation runId={run.id} signals={await loadSignals(run.id)} />
+            </div>
+          ) : (
+            <ProcessingView
+              runId={run.id}
+              status={run.status}
+              initialEvents={await loadEvents(run.id)}
+            />
+          )}
+          <Findings runId={run.id} />
+        </>
       )}
     </div>
   );
 }
 
-function SubmittedRunView({ detail }: { detail: RunDetail }) {
+async function loadSignals(runId: string): Promise<ExtractedSignalRow[]> {
+  const { signals } = await workerFetch<{ signals: ExtractedSignalRow[] }>(
+    `/runs/${runId}/signals`
+  );
+  return signals;
+}
+
+async function loadEvents(runId: string): Promise<RunEventRow[]> {
+  const { events } = await workerFetch<{ events: RunEventRow[] }>(
+    `/runs/${runId}/events`
+  );
+  return events;
+}
+
+async function Findings({ runId }: { runId: string }) {
+  const { findings } = await workerFetch<{ findings: ResearchFindingRow[] }>(
+    `/runs/${runId}/findings`
+  );
+  if (findings.length === 0) return null;
+  return <FindingsView findings={findings} />;
+}
+
+function BriefSummary({ detail }: { detail: RunDetail }) {
   const { run, brief, uploads } = detail;
   const objects = brief?.objects ?? [];
 
@@ -106,10 +151,6 @@ function SubmittedRunView({ detail }: { detail: RunDetail }) {
           </p>
         </div>
       ) : null}
-
-      <div className="mt-8 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
-        Research and document generation arrive in Phase 2.
-      </div>
     </div>
   );
 }

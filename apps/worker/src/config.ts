@@ -14,4 +14,6 @@ export const config = {
   webOrigin: process.env.WEB_ORIGIN ?? "http://localhost:3000",
   port: Number(process.env.PORT ?? 8080),
   pollIntervalMs: Number(process.env.POLL_INTERVAL_MS ?? 3000),
+  /** Cost/throughput cap (spec §10) — how many runs this worker processes at once. */
+  maxConcurrentRuns: Number(process.env.MAX_CONCURRENT_RUNS ?? 3),
 };
