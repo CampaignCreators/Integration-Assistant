@@ -1,0 +1,159 @@
+{
+  "summary": "Customers, accounts and orders flow one way from ServiceTitan into HubSpot as contacts, companies and deals. Contacts match on email; deals match on an external order id held in a custom property.",
+  "objects": [
+    {
+      "hubspot_object": "contacts",
+      "hubspot_object_name": null,
+      "external_object": "Customer",
+      "purpose": "Every ServiceTitan customer becomes a HubSpot contact so sales can follow up without re-typing.",
+      "match_key": "Email address",
+      "direction": "to_hubspot"
+    },
+    {
+      "hubspot_object": "companies",
+      "hubspot_object_name": null,
+      "external_object": "Account",
+      "purpose": "Commercial accounts become companies, so multiple contacts roll up to one account.",
+      "match_key": "Company domain",
+      "direction": "to_hubspot"
+    },
+    {
+      "hubspot_object": "deals",
+      "hubspot_object_name": null,
+      "external_object": "Order",
+      "purpose": "Orders become deals, giving sales visibility of job value and stage.",
+      "match_key": "External order id",
+      "direction": "to_hubspot"
+    }
+  ],
+  "rows": [
+    {
+      "hubspot_object": "contacts",
+      "hubspot_object_name": null,
+      "hubspot_property": "email",
+      "external_object": "Customer",
+      "external_field": "email",
+      "direction": "to_hubspot",
+      "is_match_key": true,
+      "required": true,
+      "transform": null,
+      "notes": "Primary match key."
+    },
+    {
+      "hubspot_object": "contacts",
+      "hubspot_object_name": null,
+      "hubspot_property": "firstname",
+      "external_object": "Customer",
+      "external_field": "name",
+      "direction": "to_hubspot",
+      "is_match_key": false,
+      "required": true,
+      "transform": "Split on the first space",
+      "notes": "ServiceTitan stores one name field; HubSpot splits first and last."
+    },
+    {
+      "hubspot_object": "contacts",
+      "hubspot_object_name": null,
+      "hubspot_property": "lastname",
+      "external_object": "Customer",
+      "external_field": "name",
+      "direction": "to_hubspot",
+      "is_match_key": false,
+      "required": true,
+      "transform": "Everything after the first space",
+      "notes": "ServiceTitan stores one name field; HubSpot splits first and last."
+    },
+    {
+      "hubspot_object": "contacts",
+      "hubspot_object_name": null,
+      "hubspot_property": "phone",
+      "external_object": "Customer",
+      "external_field": "phone_number",
+      "direction": "to_hubspot",
+      "is_match_key": false,
+      "required": false,
+      "transform": "Strip formatting to E.164",
+      "notes": null
+    },
+    {
+      "hubspot_object": "companies",
+      "hubspot_object_name": null,
+      "hubspot_property": "name",
+      "external_object": "Account",
+      "external_field": "account_name",
+      "direction": "to_hubspot",
+      "is_match_key": false,
+      "required": true,
+      "transform": null,
+      "notes": null
+    },
+    {
+      "hubspot_object": "companies",
+      "hubspot_object_name": null,
+      "hubspot_property": "domain",
+      "external_object": "Account",
+      "external_field": "website",
+      "direction": "to_hubspot",
+      "is_match_key": true,
+      "required": false,
+      "transform": "Host only, no scheme",
+      "notes": "Used to match companies."
+    },
+    {
+      "hubspot_object": "deals",
+      "hubspot_object_name": null,
+      "hubspot_property": "dealname",
+      "external_object": "Order",
+      "external_field": "order_number",
+      "direction": "to_hubspot",
+      "is_match_key": false,
+      "required": true,
+      "transform": "Prefix with \"Order \"",
+      "notes": null
+    },
+    {
+      "hubspot_object": "deals",
+      "hubspot_object_name": null,
+      "hubspot_property": "amount",
+      "external_object": "Order",
+      "external_field": "total",
+      "direction": "to_hubspot",
+      "is_match_key": false,
+      "required": true,
+      "transform": "Minor units to major units",
+      "notes": null
+    },
+    {
+      "hubspot_object": "deals",
+      "hubspot_object_name": null,
+      "hubspot_property": "dealstage",
+      "external_object": "Order",
+      "external_field": "UNKNOWN",
+      "direction": "to_hubspot",
+      "is_match_key": false,
+      "required": true,
+      "transform": "Stage list not established in demo mode",
+      "notes": "Stage list not yet confirmed with the client \u2014 carry forward as work to do."
+    },
+    {
+      "hubspot_object": "deals",
+      "hubspot_object_name": null,
+      "hubspot_property": "external_order_id",
+      "external_object": "Order",
+      "external_field": "id",
+      "direction": "to_hubspot",
+      "is_match_key": true,
+      "required": true,
+      "transform": "Custom property",
+      "notes": "Custom property on the deal, created during setup."
+    }
+  ],
+  "assumptions": [
+    "Contacts are matched on email address.",
+    "One-way sync into HubSpot; nothing is written back to ServiceTitan."
+  ],
+  "open_questions": [
+    "Roughly 30% of residential customers have no email address \u2014 confirm the fallback match key.",
+    "Which ServiceTitan job statuses map to which HubSpot deal stages?"
+  ]
+}

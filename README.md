@@ -81,6 +81,7 @@ lib/supabase/   clients and the "is it configured" guard
 supabase/       schema.sql to paste in, verify.sql to check it
 samples/        fictional discovery material for trying it out
 docs/setup.md   Supabase + Vercel, step by step
+docs/lovable/   what to hand Lovable if you prototype there
 archive/        previous versions, kept for reference only
 ```
 
