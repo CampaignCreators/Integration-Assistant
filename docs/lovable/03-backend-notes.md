@@ -6,8 +6,10 @@ whether the flow works.
 
 ## The three server operations
 
-This app has three route handlers. In Lovable each becomes a **Supabase Edge
-Function**, since that is where it puts server-side logic.
+This app has three Next.js route handlers. If Lovable's preview runs Next.js they
+work as-is; if it doesn't, each becomes a **Supabase Edge Function**, which is where
+Lovable puts server-side logic. See the open question in the README — test it before
+porting anything.
 
 | Route here | Does | Notes for the port |
 | --- | --- | --- |

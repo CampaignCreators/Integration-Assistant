@@ -1,73 +1,71 @@
 # Prototyping in Lovable
 
-**Read this first: Lovable cannot import this repository.** Its GitHub integration
-is export-only — connecting a project *creates a new repository*, and the docs say
-plainly that importing an existing one is not supported. So there is no file you
-can add here that makes Lovable pick this codebase up.
+Two facts from Lovable's docs that sound contradictory but aren't:
 
-There is also a stack mismatch underneath that. This app is Next.js — server
-components, route handlers, middleware. Lovable builds a client-side React app and
-puts server-side logic in **Supabase Edge Functions**. Even if import existed, the
-three API routes would not transfer as-is.
+- **You can't link this repository to a Lovable project.** Connecting always creates
+  a *new* repository: *"You can't import an existing repository into Lovable.
+  Connecting a project always creates a new repository."*
+- **Lovable reads a repository it is connected to.** *"Clone the repository, edit and
+  commit locally, and push. Your changes sync back into Lovable"*, and *"Pushing
+  commits syncs your code into Lovable and updates the preview in the editor."*
 
-What that means in practice: Lovable will build a **second** app, not continue this
-one. That is fine for prototyping — it is what Lovable is good at — as long as you
-go in knowing there are two codebases and that merging between them is manual.
+So code does flow in — just not by pointing Lovable at an existing repo.
 
-This folder is what to feed it so the prototype comes out close to what already
-exists, rather than starting from a blank prompt.
+## The way in
 
----
+1. Create a Lovable project and connect it to GitHub. It creates a new private
+   repository — call it `repo-X`.
+2. Clone `repo-X`, push this codebase into its **synced branch** (usually `main`).
+   Only the synced branch flows back; commits on other branches won't appear until
+   they're merged into it.
+3. Lovable picks up those commits and the editor updates.
 
-## What to do
+Worth knowing before you rely on it: reconnecting after disconnecting creates
+*another* new repository, and you can't re-link the old one. Don't rename or move
+`repo-X` either — that breaks the sync.
 
-**1. Start a new Lovable project** and paste [`01-product-spec.md`](01-product-spec.md)
-as the opening prompt. It describes the four steps, the exact rules that matter,
-and the copy already written.
+## The open question — worth ten minutes before anything else
 
-**2. Attach the screenshots** in [`screenshots/`](screenshots) — Lovable takes
-images as design references, and they will get you closer to the current look than
-any description.
+This app is Next.js: server components, route handlers, middleware. **Whether
+Lovable's editor and preview can build and run a Next.js app, I don't know.** Its
+docs don't name a supported framework anywhere I could find, and I'm not going to
+guess at it twice.
 
-**3. Paste [`02-design-tokens.md`](02-design-tokens.md)** so it uses Campaign
-Creators' colours rather than the default shadcn palette.
+That single unknown decides which of the paths below is real, and you can settle it
+faster than any amount of reading: make a throwaway Lovable project, push this code
+to its synced branch, and see whether the preview builds. If it does, you have one
+codebase. If it doesn't, you have two, and the rest of this folder is what makes the
+second one quick.
 
-**4. Give it [`sample-mapping.json`](sample-mapping.json)** and ask it to build the
-mapping table against that fixture. The table is the hard part of the UI, and this
-lets it be built and reviewed before any AI call is wired up.
+## If the preview can't run it
 
-**5. When you get to the backend**, read [`03-backend-notes.md`](03-backend-notes.md).
-Lovable connects to an existing Supabase project, which is the one real bridge
-between the two codebases — but be careful, because it designs schemas from
-descriptions rather than reading yours.
+Then Lovable builds a **second** app rather than continuing this one, and these
+files are what to paste in so it starts close to what exists:
 
----
+1. **[`01-product-spec.md`](01-product-spec.md)** as the opening prompt — the four
+   steps, the real copy, and the rules that are easy to lose.
+2. **[`screenshots/`](screenshots)** as design references — Lovable takes images.
+3. **[`02-design-tokens.md`](02-design-tokens.md)** for the Campaign Creators palette
+   with the contrast constraints attached.
+4. **[`sample-mapping.json`](sample-mapping.json)** so the mapping table — the hard
+   part of the UI — can be built and judged before any AI call is wired up.
+5. **[`03-backend-notes.md`](03-backend-notes.md)** when you get to the backend.
 
-## Which parts transfer, and which do not
+## What transfers either way
 
 | | Transfers | Why |
 | --- | --- | --- |
-| Supabase schema | ✅ | Lovable connects to an existing project. `supabase/schema.sql` still applies. |
+| Supabase schema | ✅ | Lovable connects to an existing Supabase project. `supabase/schema.sql` still applies. |
 | Colour palette | ✅ | Plain hex values, in `02-design-tokens.md`. |
 | Mapping data shape | ✅ | Plain JSON, in `03-backend-notes.md`. |
-| Prompts to Claude | ✅ | Plain text in `lib/prompt.ts`; copy them into an edge function. |
-| React components | ⚠️ | Same library, different conventions — Lovable uses shadcn/ui, this uses hand-rolled components. Read for logic, not for reuse. |
-| API routes | ❌ | Next.js route handlers. Must be rewritten as edge functions. |
-| Middleware and auth wiring | ❌ | Next-specific. Lovable does its own. |
-| `.docx` generation | ⚠️ | The `docx` library works in a browser, but the builders in `lib/documents.ts` assume Node. See `03-backend-notes.md`. |
+| Prompts to Claude | ✅ | Plain text in `lib/prompt.ts`. Copy them; don't rewrite from memory. |
+| React components | ⚠️ | Same library, different conventions. Read for logic. |
+| API routes | ⚠️ | Fine if the preview runs Next.js. Otherwise rewrite as Supabase Edge Functions — see `03-backend-notes.md`. |
+| `.docx` generation | ⚠️ | The `docx` library runs in a browser too, but the builders here assume Node (`Buffer`). |
 
-## Worth deciding before you start
+## Worth deciding either way
 
-Two codebases doing the same job diverge quickly. Decide which one is the product:
-
-- **Lovable is the product.** Fastest path to something people can use; this repo
-  becomes reference. You would be re-implementing the mapping editor, document
-  generation and prompts in a new stack.
-- **Lovable is a sketchpad.** Use it to try layouts and flows quickly, then bring
-  the decisions back here by hand. Nothing is thrown away, but nothing transfers
-  automatically either.
-- **Neither.** The Next.js app already does all four steps end to end. If what you
-  want is a different *look*, that is a smaller job in this repo than a rebuild.
-
-I would only reach for Lovable here if the goal is exploring a substantially
-different UX, rather than polishing this one.
+Two codebases doing the same job diverge quickly. If the goal is exploring a
+substantially different UX, Lovable is a good use of an afternoon. If the goal is
+making the current app look or work better, that's a smaller job in this repo than a
+rebuild — it already does all four steps end to end.
